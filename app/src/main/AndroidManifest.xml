@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TarotSolitaire">
         <activity
+            android:name=".optionsPage"
+            android:exported="false" />
+        <activity
             android:name=".Leaderboard"
             android:exported="false" />
         <activity
