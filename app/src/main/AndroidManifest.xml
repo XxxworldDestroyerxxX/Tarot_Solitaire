@@ -18,7 +18,7 @@
             android:name=".Leaderboard"
             android:exported="false" />
         <activity
-            android:name=".GamePage"
+            android:name=".RegistrationPage"
             android:exported="false" />
         <activity
             android:name=".MainMenu"
@@ -27,16 +27,7 @@
             android:name=".loginPage"
             android:exported="false" />
         <activity
-            android:name=".RegistrationPage"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".MainActivity"
+            android:name=".GamePage"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

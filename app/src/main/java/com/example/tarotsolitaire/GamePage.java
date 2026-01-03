@@ -1,24 +1,34 @@
 package com.example.tarotsolitaire;
 
 import android.os.Bundle;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 public class GamePage extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_game_page);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+
+        FrameLayout rootLayout = findViewById(R.id.rootLayout);
+
+        CardView cardView = new CardView(this);
+
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                dpToPx(80),
+                dpToPx(120)
+        );
+        params.leftMargin = dpToPx(100);
+        params.topMargin = dpToPx(100);
+
+        rootLayout.addView(cardView, params);
+    }
+
+    private int dpToPx(int dp) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
     }
 }
