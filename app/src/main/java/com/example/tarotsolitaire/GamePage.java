@@ -1,34 +1,54 @@
 package com.example.tarotsolitaire;
 
 import android.os.Bundle;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class GamePage extends AppCompatActivity {
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game_page);
 
-        FrameLayout rootLayout = findViewById(R.id.rootLayout);
+        FrameLayout root = findViewById(R.id.rootLayout);
 
-        CardView cardView = new CardView(this);
+        List<PileView> piles = new ArrayList<>();
 
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                dpToPx(80),
-                dpToPx(120)
+        // create 4 piles
+        for (int i = 0; i < 4; i++) {
+            PileView pile = new PileView(this);
+
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                    dp(80),
+                    dp(120)
+            );
+
+            params.leftMargin = dp(40 + i * 100);
+            params.topMargin = dp(40);
+
+            root.addView(pile, params);
+            piles.add(pile);
+        }
+
+        // create draggable card
+        CardView card = new CardView(this, piles);
+
+        FrameLayout.LayoutParams cardParams = new FrameLayout.LayoutParams(
+                dp(80),
+                dp(120)
         );
-        params.leftMargin = dpToPx(100);
-        params.topMargin = dpToPx(100);
+        cardParams.leftMargin = dp(100);
+        cardParams.topMargin = dp(300);
 
-        rootLayout.addView(cardView, params);
-    }
-
-    private int dpToPx(int dp) {
-        float density = getResources().getDisplayMetrics().density;
-        return Math.round(dp * density);
+        root.addView(card, cardParams);
     }
 }
