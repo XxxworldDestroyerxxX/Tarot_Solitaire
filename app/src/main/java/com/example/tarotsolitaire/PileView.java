@@ -51,14 +51,14 @@ public class PileView extends View {
     public void addCard(CardView card) {
         if (!cards.contains(card)) {
             cards.add(card);
-            card.setCurrentPile(this);  //
+            card.setCurrentPile(this);
         }
     }
 
     public void removeCard(CardView card) {
         if (cards.contains(card)) {
             cards.remove(card);
-            card.setCurrentPile(null);  //
+            card.setCurrentPile(null);
         }
     }
 

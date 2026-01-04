@@ -30,24 +30,31 @@ public class GamePage extends AppCompatActivity {
         int cardWidth = dp(60);
         int cardHeight = dp(90);
 
+        /* ---------- CREATE DECK ---------- */
+        Deck deck = new Deck();
+        deck.shuffle();
+
         /* ---------- LEFT PLAY AREA (9 piles) ---------- */
         for (int i = 0; i < 9; i++) {
             PileView pile = new PileView(this);
             FrameLayout.LayoutParams params =
                     new FrameLayout.LayoutParams(pileWidth, pileHeight);
 
-            params.leftMargin = dp(i * 80); // spacing 80dp
+            params.leftMargin = dp(i * 80);
             params.topMargin = dp(40);
 
             playArea.addView(pile, params);
             piles.add(pile);
 
-            // Add one card to this pile
-            CardView card = new CardView(this, piles);
-            FrameLayout.LayoutParams cardParams =
-                    new FrameLayout.LayoutParams(cardWidth, cardHeight);
-            root.addView(card, cardParams);
-            card.post(() -> card.snapToPile(pile));
+            // Draw one card from deck
+            Card card = deck.drawCard();
+            if (card != null) {
+                CardView cardView = new CardView(this, piles, card);
+                FrameLayout.LayoutParams cardParams =
+                        new FrameLayout.LayoutParams(cardWidth, cardHeight);
+                root.addView(cardView, cardParams);
+                cardView.post(() -> cardView.snapToPile(pile));
+            }
         }
 
         /* ---------- RIGHT ORGANIZE AREA (2 columns × 3 rows = 6 piles) ---------- */
@@ -56,7 +63,7 @@ public class GamePage extends AppCompatActivity {
             int rows = 3;
             int cols = 2;
 
-            int spacingX = 0; // no horizontal spacing needed, fits exactly
+            int spacingX = 0; // fits exactly horizontally
             int spacingY = (areaHeight - rows * pileHeight) / (rows + 1); // evenly distribute vertically
 
             for (int col = 0; col < cols; col++) {
@@ -65,20 +72,21 @@ public class GamePage extends AppCompatActivity {
                     FrameLayout.LayoutParams params =
                             new FrameLayout.LayoutParams(pileWidth, pileHeight);
 
-                    // Horizontal relative to organizeArea
                     params.leftMargin = col * (pileWidth + spacingX);
-                    // Vertical with evenly distributed spacing
                     params.topMargin = spacingY + row * (pileHeight + spacingY);
 
                     organizeArea.addView(pile, params);
                     piles.add(pile);
 
-                    // Add one card to this pile
-                    CardView card = new CardView(this, piles);
-                    FrameLayout.LayoutParams cardParams =
-                            new FrameLayout.LayoutParams(cardWidth, cardHeight);
-                    root.addView(card, cardParams);
-                    card.post(() -> card.snapToPile(pile));
+                    // Draw one card from deck
+                    Card card = deck.drawCard();
+                    if (card != null) {
+                        CardView cardView = new CardView(this, piles, card);
+                        FrameLayout.LayoutParams cardParams =
+                                new FrameLayout.LayoutParams(cardWidth, cardHeight);
+                        root.addView(cardView, cardParams);
+                        cardView.post(() -> cardView.snapToPile(pile));
+                    }
                 }
             }
         });
