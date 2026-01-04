@@ -7,10 +7,16 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.view.View;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PileView extends View {
 
     private Paint paint;
     private RectF rect;
+
+    // Cards in this pile
+    private List<CardView> cards = new ArrayList<>();
 
     public PileView(Context context) {
         super(context);
@@ -39,5 +45,20 @@ public class PileView extends View {
         int[] loc = new int[2];
         getLocationOnScreen(loc);
         return loc[1] + getHeight() / 2f;
+    }
+
+    /* ---------- CARD MANAGEMENT ---------- */
+    public void addCard(CardView card) {
+        cards.add(card);
+        card.setCurrentPile(this);
+    }
+
+    public void removeCard(CardView card) {
+        cards.remove(card);
+        card.setCurrentPile(null);
+    }
+
+    public List<CardView> getCards() {
+        return cards;
     }
 }

@@ -19,7 +19,7 @@ public class GamePage extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game_page);
 
-        // ROOT layer (cards must live here)
+        // Root layout (cards must be added here to float above piles)
         FrameLayout root = findViewById(R.id.rootLayout);
 
         FrameLayout playArea = findViewById(R.id.playArea);
@@ -27,47 +27,59 @@ public class GamePage extends AppCompatActivity {
 
         List<PileView> piles = new ArrayList<>();
 
+        int pileWidth = dp(70);
+        int pileHeight = dp(100);
+        int cardWidth = dp(60);
+        int cardHeight = dp(90);
+
         /* ---------- LEFT PLAY AREA (9 piles) ---------- */
         for (int i = 0; i < 9; i++) {
             PileView pile = new PileView(this);
 
             FrameLayout.LayoutParams params =
-                    new FrameLayout.LayoutParams(dp(60), dp(90));
+                    new FrameLayout.LayoutParams(pileWidth, pileHeight);
 
+            // spacing 80dp apart
             params.leftMargin = dp(20 + i * 80);
             params.topMargin = dp(40);
 
             playArea.addView(pile, params);
             piles.add(pile);
+
+            // Add a card on top of this pile
+            CardView card = new CardView(this, piles);
+            FrameLayout.LayoutParams cardParams =
+                    new FrameLayout.LayoutParams(cardWidth, cardHeight);
+            root.addView(card, cardParams);
+
+            // Snap card to pile after layout
+            card.post(() -> card.snapToPile(pile));
         }
 
-        /* ---------- RIGHT ORGANIZE AREA (2 columns × 3 rows) ---------- */
+        /* ---------- RIGHT ORGANIZE AREA (2 columns × 3 rows = 6 piles) ---------- */
         for (int col = 0; col < 2; col++) {
             for (int row = 0; row < 3; row++) {
                 PileView pile = new PileView(this);
 
                 FrameLayout.LayoutParams params =
-                        new FrameLayout.LayoutParams(dp(60), dp(90));
+                        new FrameLayout.LayoutParams(pileWidth, pileHeight);
 
-                params.leftMargin = dp(10 + col * 70);
-                params.topMargin = dp(40 + row * 110);
+                // wider spacing for right area
+                params.leftMargin = dp(10 + col * 90);
+                params.topMargin = dp(40 + row * 120);
 
                 organizeArea.addView(pile, params);
                 piles.add(pile);
+
+                // Add a card on top of this pile
+                CardView card = new CardView(this, piles);
+                FrameLayout.LayoutParams cardParams =
+                        new FrameLayout.LayoutParams(cardWidth, cardHeight);
+                root.addView(card, cardParams);
+
+                // Snap card to pile after layout
+                card.post(() -> card.snapToPile(pile));
             }
         }
-
-        /* ---------- DRAGGABLE CARD (FLOATS ABOVE ALL AREAS) ---------- */
-        CardView card = new CardView(this, piles);
-
-        FrameLayout.LayoutParams cardParams =
-                new FrameLayout.LayoutParams(dp(60), dp(90));
-
-        cardParams.leftMargin = dp(100);
-        cardParams.topMargin = dp(300);
-
-        // ADD CARD TO ROOT, NOT PLAY AREA
-        root.addView(card, cardParams);
-        card.bringToFront();
     }
 }
