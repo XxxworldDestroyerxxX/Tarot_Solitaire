@@ -19,36 +19,55 @@ public class GamePage extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game_page);
 
+        // ROOT layer (cards must live here)
         FrameLayout root = findViewById(R.id.rootLayout);
+
+        FrameLayout playArea = findViewById(R.id.playArea);
+        FrameLayout organizeArea = findViewById(R.id.organizeArea);
 
         List<PileView> piles = new ArrayList<>();
 
-        // create 4 piles
-        for (int i = 0; i < 4; i++) {
+        /* ---------- LEFT PLAY AREA (9 piles) ---------- */
+        for (int i = 0; i < 9; i++) {
             PileView pile = new PileView(this);
 
-            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                    dp(80),
-                    dp(120)
-            );
+            FrameLayout.LayoutParams params =
+                    new FrameLayout.LayoutParams(dp(60), dp(90));
 
-            params.leftMargin = dp(40 + i * 100);
+            params.leftMargin = dp(20 + i * 80);
             params.topMargin = dp(40);
 
-            root.addView(pile, params);
+            playArea.addView(pile, params);
             piles.add(pile);
         }
 
-        // create draggable card
+        /* ---------- RIGHT ORGANIZE AREA (2 columns × 3 rows) ---------- */
+        for (int col = 0; col < 2; col++) {
+            for (int row = 0; row < 3; row++) {
+                PileView pile = new PileView(this);
+
+                FrameLayout.LayoutParams params =
+                        new FrameLayout.LayoutParams(dp(60), dp(90));
+
+                params.leftMargin = dp(10 + col * 70);
+                params.topMargin = dp(40 + row * 110);
+
+                organizeArea.addView(pile, params);
+                piles.add(pile);
+            }
+        }
+
+        /* ---------- DRAGGABLE CARD (FLOATS ABOVE ALL AREAS) ---------- */
         CardView card = new CardView(this, piles);
 
-        FrameLayout.LayoutParams cardParams = new FrameLayout.LayoutParams(
-                dp(80),
-                dp(120)
-        );
+        FrameLayout.LayoutParams cardParams =
+                new FrameLayout.LayoutParams(dp(60), dp(90));
+
         cardParams.leftMargin = dp(100);
         cardParams.topMargin = dp(300);
 
+        // ADD CARD TO ROOT, NOT PLAY AREA
         root.addView(card, cardParams);
+        card.bringToFront();
     }
 }

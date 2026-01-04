@@ -28,11 +28,16 @@ public class PileView extends View {
         canvas.drawRoundRect(rect, 16f, 16f, paint);
     }
 
-    public float centerX() {
-        return getX() + getWidth() / 2f;
+    // Screen-space center
+    public float globalCenterX() {
+        int[] loc = new int[2];
+        getLocationOnScreen(loc);
+        return loc[0] + getWidth() / 2f;
     }
 
-    public float centerY() {
-        return getY() + getHeight() / 2f;
+    public float globalCenterY() {
+        int[] loc = new int[2];
+        getLocationOnScreen(loc);
+        return loc[1] + getHeight() / 2f;
     }
 }

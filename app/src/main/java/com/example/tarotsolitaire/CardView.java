@@ -1,36 +1,22 @@
 package com.example.tarotsolitaire;
 
 import android.content.Context;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.RectF;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.FrameLayout;
 
 import java.util.List;
 
 public class CardView extends View {
 
-    private float lastX, lastY;
-    private Paint paint;
-    private RectF rect;
+    private float offsetX, offsetY;
     private List<PileView> piles;
 
     public CardView(Context context, List<PileView> piles) {
         super(context);
         this.piles = piles;
-
-        paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setColor(Color.WHITE);
-        rect = new RectF();
-        setElevation(12f);
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        rect.set(0, 0, getWidth(), getHeight());
-        canvas.drawRoundRect(rect, 16f, 16f, paint);
+        setBackgroundColor(Color.RED);
     }
 
     @Override
@@ -39,52 +25,68 @@ public class CardView extends View {
         switch (event.getAction()) {
 
             case MotionEvent.ACTION_DOWN:
-                lastX = event.getRawX();
-                lastY = event.getRawY();
+                offsetX = event.getRawX() - getX();
+                offsetY = event.getRawY() - getY();
                 bringToFront();
                 return true;
 
             case MotionEvent.ACTION_MOVE:
-                float dx = event.getRawX() - lastX;
-                float dy = event.getRawY() - lastY;
-
-                setX(getX() + dx);
-                setY(getY() + dy);
-
-                lastX = event.getRawX();
-                lastY = event.getRawY();
+                setX(event.getRawX() - offsetX);
+                setY(event.getRawY() - offsetY);
                 return true;
 
             case MotionEvent.ACTION_UP:
-                snapToNearestPile();
+                trySnapToPile();
                 return true;
         }
 
         return super.onTouchEvent(event);
     }
 
-    private void snapToNearestPile() {
-        float cardCenterX = getX() + getWidth() / 2f;
-        float cardCenterY = getY() + getHeight() / 2f;
+    /* ---------- SNAP LOGIC ---------- */
 
-        PileView closestPile = null;
-        float closestDistance = Float.MAX_VALUE;
+    private void trySnapToPile() {
+        int[] cardLoc = new int[2];
+        getLocationOnScreen(cardLoc);
+
+        float cardCenterX = cardLoc[0] + getWidth() / 2f;
+        float cardCenterY = cardLoc[1] + getHeight() / 2f;
 
         for (PileView pile : piles) {
-            float dx = cardCenterX - pile.centerX();
-            float dy = cardCenterY - pile.centerY();
-            float distance = (dx * dx) + (dy * dy);
+            float dx = cardCenterX - pile.globalCenterX();
+            float dy = cardCenterY - pile.globalCenterY();
+            float dist = (float) Math.sqrt(dx * dx + dy * dy);
 
-            if (distance < closestDistance) {
-                closestDistance = distance;
-                closestPile = pile;
+            if (dist < dp(40)) {
+                snapToPile(pile);
+                break;
             }
         }
+    }
 
-        // snap only if close enough
-        if (closestPile != null && closestDistance < 200 * 200) {
-            setX(closestPile.getX());
-            setY(closestPile.getY());
-        }
+    private void snapToPile(PileView pile) {
+        float rootX = screenToRootX(pile.globalCenterX());
+        float rootY = screenToRootY(pile.globalCenterY());
+
+        setX(rootX - getWidth() / 2f);
+        setY(rootY - getHeight() / 2f);
+    }
+
+    /* ---------- COORDINATE CONVERSION ---------- */
+
+    private float screenToRootX(float screenX) {
+        int[] rootLoc = new int[2];
+        ((View) getParent()).getLocationOnScreen(rootLoc);
+        return screenX - rootLoc[0];
+    }
+
+    private float screenToRootY(float screenY) {
+        int[] rootLoc = new int[2];
+        ((View) getParent()).getLocationOnScreen(rootLoc);
+        return screenY - rootLoc[1];
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 }
