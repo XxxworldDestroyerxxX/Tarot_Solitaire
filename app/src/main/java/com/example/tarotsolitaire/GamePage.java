@@ -23,16 +23,13 @@ public class GamePage extends AppCompatActivity {
         FrameLayout playArea = findViewById(R.id.playArea);
         FrameLayout organizeArea = findViewById(R.id.organizeArea);
 
-        List<PileView> piles = new ArrayList<>();
+        List<PileView> leftPiles = new ArrayList<>();
+        List<PileView> rightPiles = new ArrayList<>();
 
         int pileWidth = dp(70);
         int pileHeight = dp(100);
         int cardWidth = dp(60);
         int cardHeight = dp(90);
-
-        /* ---------- CREATE DECK ---------- */
-        Deck deck = new Deck();
-        deck.shuffle();
 
         /* ---------- LEFT PLAY AREA (9 piles) ---------- */
         for (int i = 0; i < 9; i++) {
@@ -44,27 +41,16 @@ public class GamePage extends AppCompatActivity {
             params.topMargin = dp(40);
 
             playArea.addView(pile, params);
-            piles.add(pile);
-
-            // Draw one card from deck
-            Card card = deck.drawCard();
-            if (card != null) {
-                CardView cardView = new CardView(this, piles, card);
-                FrameLayout.LayoutParams cardParams =
-                        new FrameLayout.LayoutParams(cardWidth, cardHeight);
-                root.addView(cardView, cardParams);
-                cardView.post(() -> cardView.snapToPile(pile));
-            }
+            leftPiles.add(pile); // keep track of left piles
         }
 
-        /* ---------- RIGHT ORGANIZE AREA (2 columns × 3 rows = 6 piles) ---------- */
+        /* ---------- RIGHT ORGANIZE AREA (6 piles) ---------- */
         organizeArea.post(() -> {
             int areaHeight = organizeArea.getHeight();
             int rows = 3;
             int cols = 2;
-
-            int spacingX = 0; // fits exactly horizontally
-            int spacingY = (areaHeight - rows * pileHeight) / (rows + 1); // evenly distribute vertically
+            int spacingX = 0;
+            int spacingY = (areaHeight - rows * pileHeight) / (rows + 1);
 
             for (int col = 0; col < cols; col++) {
                 for (int row = 0; row < rows; row++) {
@@ -76,19 +62,33 @@ public class GamePage extends AppCompatActivity {
                     params.topMargin = spacingY + row * (pileHeight + spacingY);
 
                     organizeArea.addView(pile, params);
-                    piles.add(pile);
-
-                    // Draw one card from deck
-                    Card card = deck.drawCard();
-                    if (card != null) {
-                        CardView cardView = new CardView(this, piles, card);
-                        FrameLayout.LayoutParams cardParams =
-                                new FrameLayout.LayoutParams(cardWidth, cardHeight);
-                        root.addView(cardView, cardParams);
-                        cardView.post(() -> cardView.snapToPile(pile));
-                    }
+                    rightPiles.add(pile); // keep track of right piles
                 }
             }
+
+            /* ---------- DEAL ENTIRE DECK TO LEFT PILES ---------- */
+            Deck deck = new Deck();
+            deck.shuffle();
+
+            List<PileView> allPiles = new ArrayList<>();
+            allPiles.addAll(leftPiles);
+            allPiles.addAll(rightPiles);
+
+            int pileIndex = 0;
+            for (Card card : deck.getCards()) {
+                PileView pile = leftPiles.get(pileIndex);
+                CardView cardView = new CardView(this, allPiles, card); // <--- use allPiles
+
+                FrameLayout.LayoutParams cardParams =
+                        new FrameLayout.LayoutParams(cardWidth, cardHeight);
+                root.addView(cardView, cardParams);
+
+                // Snap card to its starting pile
+                cardView.post(() -> cardView.snapToPile(pile));
+
+                pileIndex = (pileIndex + 1) % leftPiles.size();
+            }
+
         });
     }
 }

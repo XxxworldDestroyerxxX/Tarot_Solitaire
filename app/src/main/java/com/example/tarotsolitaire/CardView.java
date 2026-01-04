@@ -14,12 +14,11 @@ public class CardView extends View {
 
     private final List<PileView> piles; // all piles to snap to
     private PileView currentPile;       // the pile this card currently belongs to
-    private final Card card;            // the logical card
 
     private float offsetX, offsetY;     // for dragging
-    private final Paint paint;
-    private final Paint textPaint;
-    private final RectF rect;
+    private Paint paint;
+    private RectF rect;
+    private Card card;                  // logical card (rank/suit)
 
     public CardView(Context context, List<PileView> piles, Card card) {
         super(context);
@@ -29,44 +28,31 @@ public class CardView extends View {
         paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         rect = new RectF();
 
-        textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        textPaint.setColor(Color.BLACK);
-        textPaint.setTextSize(40f);
-
-        setBackgroundColor(Color.TRANSPARENT);
+        // Example: color depends on suit
+        if (card.getSuit() == Card.Suit.HEARTS || card.getSuit() == Card.Suit.DIAMONDS) {
+            paint.setColor(Color.RED);
+        } else {
+            paint.setColor(Color.WHITE);
+        }
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        // Draw card background
+        // Draw rounded rectangle for card
         rect.set(0, 0, getWidth(), getHeight());
-        paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.WHITE);
         canvas.drawRoundRect(rect, 16f, 16f, paint);
 
-        // Draw card border
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(4f);
-        paint.setColor(Color.BLACK);
-        canvas.drawRoundRect(rect, 16f, 16f, paint);
-
-        // Draw rank + suit
-        String rankStr;
-        switch (card.getRank()) {
-            case 1: rankStr = "A"; break;
-            case 11: rankStr = "J"; break;
-            case 12: rankStr = "Q"; break;
-            case 13: rankStr = "K"; break;
-            default: rankStr = String.valueOf(card.getRank());
-        }
-        String text = rankStr + card.getSuit().name().charAt(0);
-        float textWidth = textPaint.measureText(text);
-        canvas.drawText(text, (getWidth() - textWidth) / 2f, getHeight() / 2f + 15f, textPaint);
+        // Draw rank and suit in top-left corner
+        Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textPaint.setColor(Color.BLACK);
+        textPaint.setTextSize(getHeight() * 0.2f);
+        canvas.drawText(card.getRankString(), getWidth() * 0.1f, getHeight() * 0.25f, textPaint);
+        canvas.drawText(card.getSuitSymbol(), getWidth() * 0.1f, getHeight() * 0.45f, textPaint);
     }
 
-    // -------- Touch / Dragging (unchanged) --------
+    /* ---------- TOUCH DRAGGING ---------- */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
@@ -75,10 +61,12 @@ public class CardView extends View {
                 offsetY = event.getRawY() - getY();
                 bringToFront();
                 return true;
+
             case MotionEvent.ACTION_MOVE:
                 setX(event.getRawX() - offsetX);
                 setY(event.getRawY() - offsetY);
                 return true;
+
             case MotionEvent.ACTION_UP:
                 trySnapToPile();
                 return true;
@@ -86,7 +74,7 @@ public class CardView extends View {
         return super.onTouchEvent(event);
     }
 
-    // -------- Snap logic (unchanged) --------
+    /* ---------- SNAP TO CLOSEST PILE ---------- */
     private void trySnapToPile() {
         int[] cardLoc = new int[2];
         getLocationOnScreen(cardLoc);
@@ -107,16 +95,23 @@ public class CardView extends View {
             }
         }
 
-        if (closestPile != null) snapToPile(closestPile);
-        else if (currentPile != null) snapToPile(currentPile);
+        if (closestPile != null) {
+            snapToPile(closestPile);
+        } else if (currentPile != null) {
+            snapToPile(currentPile);
+        }
     }
 
+    /* ---------- SNAP LOGIC ---------- */
     public void snapToPile(PileView pile) {
         if (currentPile != null) currentPile.removeCard(this);
         pile.addCard(this);
         currentPile = pile;
 
+        // Offset for stacked display (currently only one card per pile, adjust if multiple)
         float offsetY = pile.getHeight() * 0.3f * (pile.getCards().size() - 1);
+
+        // Convert screen coordinates to root layout
         float rootX = screenToRootX(pile.globalCenterX()) - getWidth() / 2f;
         float rootY = screenToRootY(pile.globalCenterY()) - getHeight() / 2f + offsetY;
 
@@ -124,9 +119,16 @@ public class CardView extends View {
         setY(rootY);
     }
 
-    public void setCurrentPile(PileView pile) { this.currentPile = pile; }
-    public PileView getCurrentPile() { return currentPile; }
+    /* ---------- CURRENT PILE GETTER/SETTER ---------- */
+    public void setCurrentPile(PileView pile) {
+        this.currentPile = pile;
+    }
 
+    public PileView getCurrentPile() {
+        return currentPile;
+    }
+
+    /* ---------- HELPER METHODS ---------- */
     private float screenToRootX(float screenX) {
         int[] rootLoc = new int[2];
         ((View) getParent()).getLocationOnScreen(rootLoc);
@@ -139,5 +141,7 @@ public class CardView extends View {
         return screenY - rootLoc[1];
     }
 
-    private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
 }
