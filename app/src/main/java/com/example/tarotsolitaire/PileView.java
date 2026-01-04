@@ -12,11 +12,11 @@ import java.util.List;
 
 public class PileView extends View {
 
-    private Paint paint;
-    private RectF rect;
+    private final Paint paint;
+    private final RectF rect;
 
-    // Cards in this pile
-    private List<CardView> cards = new ArrayList<>();
+    // Cards currently in this pile
+    private final List<CardView> cards = new ArrayList<>();
 
     public PileView(Context context) {
         super(context);
@@ -34,7 +34,7 @@ public class PileView extends View {
         canvas.drawRoundRect(rect, 16f, 16f, paint);
     }
 
-    // Screen-space center
+    /* ---------- SCREEN SPACE CENTER ---------- */
     public float globalCenterX() {
         int[] loc = new int[2];
         getLocationOnScreen(loc);
@@ -49,13 +49,17 @@ public class PileView extends View {
 
     /* ---------- CARD MANAGEMENT ---------- */
     public void addCard(CardView card) {
-        cards.add(card);
-        card.setCurrentPile(this);
+        if (!cards.contains(card)) {
+            cards.add(card);
+            card.setCurrentPile(this);  //
+        }
     }
 
     public void removeCard(CardView card) {
-        cards.remove(card);
-        card.setCurrentPile(null);
+        if (cards.contains(card)) {
+            cards.remove(card);
+            card.setCurrentPile(null);  //
+        }
     }
 
     public List<CardView> getCards() {
