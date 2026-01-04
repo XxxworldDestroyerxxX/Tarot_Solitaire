@@ -19,9 +19,7 @@ public class GamePage extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game_page);
 
-        // Root layout (cards must be added here to float above piles)
         FrameLayout root = findViewById(R.id.rootLayout);
-
         FrameLayout playArea = findViewById(R.id.playArea);
         FrameLayout organizeArea = findViewById(R.id.organizeArea);
 
@@ -35,51 +33,54 @@ public class GamePage extends AppCompatActivity {
         /* ---------- LEFT PLAY AREA (9 piles) ---------- */
         for (int i = 0; i < 9; i++) {
             PileView pile = new PileView(this);
-
             FrameLayout.LayoutParams params =
                     new FrameLayout.LayoutParams(pileWidth, pileHeight);
 
-            // spacing 80dp apart
-            params.leftMargin = dp(20 + i * 80);
+            params.leftMargin = dp(i * 80); // spacing 80dp
             params.topMargin = dp(40);
 
             playArea.addView(pile, params);
             piles.add(pile);
 
-            // Add a card on top of this pile
+            // Add one card to this pile
             CardView card = new CardView(this, piles);
             FrameLayout.LayoutParams cardParams =
                     new FrameLayout.LayoutParams(cardWidth, cardHeight);
             root.addView(card, cardParams);
-
-            // Snap card to pile after layout
             card.post(() -> card.snapToPile(pile));
         }
 
         /* ---------- RIGHT ORGANIZE AREA (2 columns × 3 rows = 6 piles) ---------- */
-        for (int col = 0; col < 2; col++) {
-            for (int row = 0; row < 3; row++) {
-                PileView pile = new PileView(this);
+        organizeArea.post(() -> {
+            int areaHeight = organizeArea.getHeight();
+            int rows = 3;
+            int cols = 2;
 
-                FrameLayout.LayoutParams params =
-                        new FrameLayout.LayoutParams(pileWidth, pileHeight);
+            int spacingX = 0; // no horizontal spacing needed, fits exactly
+            int spacingY = (areaHeight - rows * pileHeight) / (rows + 1); // evenly distribute vertically
 
-                // wider spacing for right area
-                params.leftMargin = dp(10 + col * 90);
-                params.topMargin = dp(40 + row * 120);
+            for (int col = 0; col < cols; col++) {
+                for (int row = 0; row < rows; row++) {
+                    PileView pile = new PileView(this);
+                    FrameLayout.LayoutParams params =
+                            new FrameLayout.LayoutParams(pileWidth, pileHeight);
 
-                organizeArea.addView(pile, params);
-                piles.add(pile);
+                    // Horizontal relative to organizeArea
+                    params.leftMargin = col * (pileWidth + spacingX);
+                    // Vertical with evenly distributed spacing
+                    params.topMargin = spacingY + row * (pileHeight + spacingY);
 
-                // Add a card on top of this pile
-                CardView card = new CardView(this, piles);
-                FrameLayout.LayoutParams cardParams =
-                        new FrameLayout.LayoutParams(cardWidth, cardHeight);
-                root.addView(card, cardParams);
+                    organizeArea.addView(pile, params);
+                    piles.add(pile);
 
-                // Snap card to pile after layout
-                card.post(() -> card.snapToPile(pile));
+                    // Add one card to this pile
+                    CardView card = new CardView(this, piles);
+                    FrameLayout.LayoutParams cardParams =
+                            new FrameLayout.LayoutParams(cardWidth, cardHeight);
+                    root.addView(card, cardParams);
+                    card.post(() -> card.snapToPile(pile));
+                }
             }
-        }
+        });
     }
 }
