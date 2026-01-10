@@ -7,14 +7,38 @@ public class Pile {
 
     private final List<Card> cards = new ArrayList<>();
 
+    /**
+     * Determines if a given card can be placed on this pile based on game rules.
+     * @param cardToPlace The card the user is trying to place.
+     * @return True if the move is legal, false otherwise.
+     */
+    public boolean canPlaceCard(Card cardToPlace) {
+        // Rule 1: Any card can be placed on an empty pile.
+        if (this.isEmpty()) {
+            return true;
+        }
+
+        // Rule 2: If not empty, check the rules against the top card.
+        Card topCard = this.getTopCard();
+        if (topCard == null) return false; // Safety check
+
+        // Delegate the rule check to the Card's logic.
+        return cardToPlace.canBePlacedOn(topCard);
+    }
+
+    // --- Standard list management methods ---
     public void addCard(Card card) {
-        cards.add(card);
-        card.setPile(this);
+        if (!cards.contains(card)) {
+            cards.add(card);
+            card.setPile(this);
+        }
     }
 
     public void removeCard(Card card) {
-        cards.remove(card);
-        card.setPile(null);
+        if (cards.contains(card)) {
+            cards.remove(card);
+            card.setPile(null);
+        }
     }
 
     public Card getTopCard() {
@@ -28,9 +52,5 @@ public class Pile {
 
     public boolean isEmpty() {
         return cards.isEmpty();
-    }
-
-    public int size() {
-        return cards.size();
     }
 }

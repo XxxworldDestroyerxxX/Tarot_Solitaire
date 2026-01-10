@@ -2,7 +2,6 @@ package com.example.tarotsolitaire;
 
 import android.os.Bundle;
 import android.widget.FrameLayout;
-
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
@@ -23,29 +22,39 @@ public class GamePage extends AppCompatActivity {
         FrameLayout playArea = findViewById(R.id.playArea);
         FrameLayout organizeArea = findViewById(R.id.organizeArea);
 
-        List<PileView> leftPiles = new ArrayList<>();
-        List<PileView> rightPiles = new ArrayList<>();
+        // --- Lists for both the UI views AND the game logic objects ---
+        List<PileView> leftPileViews = new ArrayList<>();
+        List<Pile> leftPileLogics = new ArrayList<>(); // LOGIC
+        List<PileView> rightPileViews = new ArrayList<>();
+        List<Pile> rightPileLogics = new ArrayList<>(); // LOGIC
+        List<PileView> allPiles = new ArrayList<>(); // Master list of views for CardView
 
         int pileWidth = dp(70);
         int pileHeight = dp(100);
         int cardWidth = dp(60);
         int cardHeight = dp(90);
 
-        /* ---------- LEFT PLAY AREA (9 piles) ---------- */
-        for (int i = 0; i < 9; i++) {
-            PileView pile = new PileView(this);
-            FrameLayout.LayoutParams params =
-                    new FrameLayout.LayoutParams(pileWidth, pileHeight);
+        /* ---------- 1. CREATE ALL VIEWS AND LOGIC ---------- */
 
+        // LEFT PLAY AREA (9 piles)
+        for (int i = 0; i < 9; i++) {
+            // --- FIX: Create and link both the view and the logic ---
+            PileView pileView = new PileView(this);
+            Pile pileLogic = new Pile();
+            pileView.setLogicalPile(pileLogic); // <-- The crucial link
+
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(pileWidth, pileHeight);
             params.leftMargin = dp(i * 80);
             params.topMargin = dp(40);
 
-            playArea.addView(pile, params);
-            leftPiles.add(pile); // keep track of left piles
+            playArea.addView(pileView, params);
+            leftPileViews.add(pileView);
+            leftPileLogics.add(pileLogic);
         }
 
-        /* ---------- RIGHT ORGANIZE AREA (6 piles) ---------- */
+        /* ---------- 2. WAIT FOR LAYOUT, THEN CREATE RIGHT PILES & DEAL ---------- */
         organizeArea.post(() -> {
+            // RIGHT ORGANIZE AREA (6 piles)
             int areaHeight = organizeArea.getHeight();
             int rows = 3;
             int cols = 2;
@@ -54,53 +63,50 @@ public class GamePage extends AppCompatActivity {
 
             for (int col = 0; col < cols; col++) {
                 for (int row = 0; row < rows; row++) {
-                    PileView pile = new PileView(this);
-                    FrameLayout.LayoutParams params =
-                            new FrameLayout.LayoutParams(pileWidth, pileHeight);
+                    // --- FIX: Also create and link the logic here ---
+                    PileView pileView = new PileView(this);
+                    Pile pileLogic = new Pile();
+                    pileView.setLogicalPile(pileLogic); // <-- The crucial link
 
+                    FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(pileWidth, pileHeight);
                     params.leftMargin = col * (pileWidth + spacingX);
                     params.topMargin = spacingY + row * (pileHeight + spacingY);
 
-                    organizeArea.addView(pile, params);
-                    rightPiles.add(pile); // keep track of right piles
+                    organizeArea.addView(pileView, params);
+                    rightPileViews.add(pileView);
+                    rightPileLogics.add(pileLogic);
                 }
             }
 
-            /* ---------- DEAL ENTIRE DECK TO LEFT PILES (WITH FIX) ---------- */
+            // --- Create the master 'allPiles' list of VIEWS ---
+            allPiles.clear();
+            allPiles.addAll(leftPileViews);
+            allPiles.addAll(rightPileViews);
+
+            /* ---------- 3. DEAL CARDS ---------- */
             Deck deck = new Deck();
             deck.shuffle();
 
-            List<PileView> allPiles = new ArrayList<>();
-            allPiles.addAll(leftPiles);
-            allPiles.addAll(rightPiles);
-
             int pileIndex = 0;
             List<Card> cardsToDeal = deck.getCards();
-            // Use a traditional for loop to have more control over the index
-            for (int i = 0; i < cardsToDeal.size(); i++) {
-                Card card = cardsToDeal.get(i);
-
-                // --- THIS IS THE FIX ---
-                // If the current pile index is 4 (the 5th pile), skip it by advancing the index.
-                if (pileIndex == 4) {
-                    pileIndex = (pileIndex + 1) % leftPiles.size();
+            for (Card card : cardsToDeal) {
+                if (pileIndex == 4) { // Skip 5th pile
+                    pileIndex = (pileIndex + 1) % leftPileViews.size();
                 }
 
-                // Now get the pile using the potentially corrected index
-                PileView pile = leftPiles.get(pileIndex);
+                PileView targetPileView = leftPileViews.get(pileIndex);
+
+                // Create the CardView, passing it the master list of all *visual* piles
                 CardView cardView = new CardView(this, allPiles, card);
 
-                FrameLayout.LayoutParams cardParams =
-                        new FrameLayout.LayoutParams(cardWidth, cardHeight);
+                FrameLayout.LayoutParams cardParams = new FrameLayout.LayoutParams(cardWidth, cardHeight);
                 root.addView(cardView, cardParams);
 
-                // Snap card to its starting pile
-                // We use a final variable to pass the correct pile to the lambda
-                final PileView targetPile = pile;
-                cardView.post(() -> cardView.snapToPile(targetPile));
+                // Use post() to ensure the cardView is measured before its initial snap
+                final PileView finalTargetPile = targetPileView;
+                cardView.post(() -> cardView.snapToPile(finalTargetPile, false));
 
-                // Advance to the next pile index for the next card
-                pileIndex = (pileIndex + 1) % leftPiles.size();
+                pileIndex = (pileIndex + 1) % leftPileViews.size();
             }
         });
     }

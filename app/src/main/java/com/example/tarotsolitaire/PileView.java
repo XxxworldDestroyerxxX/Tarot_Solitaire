@@ -5,26 +5,41 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
-import android.view.View;
-
+import android.util.AttributeSet;
+import android.widget.FrameLayout;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PileView extends View {
+public class PileView extends FrameLayout {
 
     private final Paint paint;
     private final RectF rect;
+    private final List<CardView> cardViews = new ArrayList<>(); // List of UI views
 
-    // Cards currently in this pile
-    private final List<CardView> cards = new ArrayList<>();
+    private Pile logicalPile; // The crucial link to the game logic
 
-    public PileView(Context context) {
-        super(context);
+    public PileView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        setWillNotDraw(false); // Enable onDraw for this layout
+
         paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(4f);
         paint.setColor(Color.WHITE);
         rect = new RectF();
+    }
+
+    public PileView(Context context) {
+        this(context, null);
+    }
+
+    // --- METHODS TO LINK UI AND LOGIC ---
+    public void setLogicalPile(Pile pile) {
+        this.logicalPile = pile;
+    }
+
+    public Pile getLogicalPile() {
+        return this.logicalPile;
     }
 
     @Override
@@ -34,71 +49,27 @@ public class PileView extends View {
         canvas.drawRoundRect(rect, 16f, 16f, paint);
     }
 
-    /* ---------- SCREEN SPACE CENTER ---------- */
-    public float globalCenterX() {
-        int[] loc = new int[2];
-        getLocationOnScreen(loc);
-        return loc[0] + getWidth() / 2f;
-    }
-
-    public float globalCenterY() {
-        int[] loc = new int[2];
-        getLocationOnScreen(loc);
-        return loc[1] + getHeight() / 2f;
-    }
-
-    /**
-     * Calculates the Y-coordinate for where the NEXT card should snap.
-     * This is on top of the current highest card in the pile.
-     */
-    public float getSnapCenterY() {
-        // Get the base Y-coordinate (the center of the invisible pile outline)
-        float baseY = globalCenterY();
-
-        if (cards.isEmpty()) {
-            // If the pile is empty, the snap target is just the center of the pile.
-            return baseY;
-        } else {
-            // If there are cards, the snap target is the top of the stack.
-            // We get a sample card's height to calculate the visual offset between cards.
-            float cardHeight = cards.get(0).getHeight();
-            // This offset MUST match the visual stacking offset used in CardView.snapToPile().
-            float offsetPerCard = cardHeight * 0.3f;
-            // The total offset is based on the number of cards already in the pile.
-            float totalOffset = offsetPerCard * cards.size();
-
-            // The new snap position is the pile's base Y plus the total offset.
-            return baseY + totalOffset;
+    // --- CARDVIEW MANAGEMENT ---
+    public void addCardView(CardView cardView) {
+        if (!cardViews.contains(cardView)) {
+            cardViews.add(cardView);
+            cardView.setCurrentPile(this);
         }
     }
 
-    /* ---------- CARD MANAGEMENT ---------- */
-    public void addCard(CardView card) {
-        if (!cards.contains(card)) {
-            cards.add(card);
-            card.setCurrentPile(this);
-        }
+    public void removeCardView(CardView cardView) {
+        cardViews.remove(cardView);
+        cardView.setCurrentPile(null);
     }
 
-    public void removeCard(CardView card) {
-        if (cards.contains(card)) {
-            cards.remove(card);
-            card.setCurrentPile(null);
-        }
+    public List<CardView> getCardViews() {
+        return cardViews;
     }
 
-    public List<CardView> getCards() {
-        return cards;
-    }
-
-    /**
-     * Gets the CardView that is visually on top of the pile.
-     * @return The top CardView, or null if the pile is empty.
-     */
-    public CardView getTopCard() {
-        if (cards.isEmpty()) {
+    public CardView getTopCardView() {
+        if (cardViews.isEmpty()) {
             return null;
         }
-        return cards.get(cards.size() - 1);
+        return cardViews.get(cardViews.size() - 1);
     }
 }
