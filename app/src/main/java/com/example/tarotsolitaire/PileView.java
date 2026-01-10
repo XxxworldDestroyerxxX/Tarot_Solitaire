@@ -47,6 +47,31 @@ public class PileView extends View {
         return loc[1] + getHeight() / 2f;
     }
 
+    /**
+     * Calculates the Y-coordinate for where the NEXT card should snap.
+     * This is on top of the current highest card in the pile.
+     */
+    public float getSnapCenterY() {
+        // Get the base Y-coordinate (the center of the invisible pile outline)
+        float baseY = globalCenterY();
+
+        if (cards.isEmpty()) {
+            // If the pile is empty, the snap target is just the center of the pile.
+            return baseY;
+        } else {
+            // If there are cards, the snap target is the top of the stack.
+            // We get a sample card's height to calculate the visual offset between cards.
+            float cardHeight = cards.get(0).getHeight();
+            // This offset MUST match the visual stacking offset used in CardView.snapToPile().
+            float offsetPerCard = cardHeight * 0.3f;
+            // The total offset is based on the number of cards already in the pile.
+            float totalOffset = offsetPerCard * cards.size();
+
+            // The new snap position is the pile's base Y plus the total offset.
+            return baseY + totalOffset;
+        }
+    }
+
     /* ---------- CARD MANAGEMENT ---------- */
     public void addCard(CardView card) {
         if (!cards.contains(card)) {
@@ -64,5 +89,16 @@ public class PileView extends View {
 
     public List<CardView> getCards() {
         return cards;
+    }
+
+    /**
+     * Gets the CardView that is visually on top of the pile.
+     * @return The top CardView, or null if the pile is empty.
+     */
+    public CardView getTopCard() {
+        if (cards.isEmpty()) {
+            return null;
+        }
+        return cards.get(cards.size() - 1);
     }
 }
