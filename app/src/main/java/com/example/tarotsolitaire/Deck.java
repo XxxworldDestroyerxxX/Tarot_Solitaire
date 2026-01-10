@@ -11,7 +11,11 @@ public class Deck {
     public Deck() {
         for (Card.Suit suit : Card.Suit.values()) {
             for (int rank = 1; rank <= 13; rank++) {
-                cards.add(new Card(suit, rank));
+                // --- THIS IS THE FIX ---
+                // Only add the card if its rank is not 1 (i.e., it's not an Ace).
+                if (rank != 1) {
+                    cards.add(new Card(suit, rank));
+                }
             }
         }
     }
