@@ -3,6 +3,7 @@ package com.example.tarotsolitaire;
 import android.os.Bundle;
 import android.widget.FrameLayout;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout; // <-- IMPORT THE CORRECT LAYOUT
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,11 +19,17 @@ public class GamePage extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game_page);
 
-        FrameLayout root = findViewById(R.id.rootLayout);
+        // --- THIS IS THE FIX ---
+        // The root variable is now correctly typed as ConstraintLayout to match your XML.
+        ConstraintLayout root = findViewById(R.id.rootLayout);
+
+        // The rest of the views are still FrameLayouts, so these are correct.
         FrameLayout playArea = findViewById(R.id.playArea);
         FrameLayout organizeArea = findViewById(R.id.organizeArea);
 
-        // --- Lists for both the UI views AND the game logic objects ---
+        // --- The rest of your logic remains unchanged as it was correct. ---
+
+        // Lists for both the UI views AND the game logic objects
         List<PileView> leftPileViews = new ArrayList<>();
         List<Pile> leftPileLogics = new ArrayList<>(); // LOGIC
         List<PileView> rightPileViews = new ArrayList<>();
@@ -38,10 +45,10 @@ public class GamePage extends AppCompatActivity {
 
         // LEFT PLAY AREA (9 piles)
         for (int i = 0; i < 9; i++) {
-            // --- FIX: Create and link both the view and the logic ---
+            // Create and link both the view and the logic
             PileView pileView = new PileView(this);
             Pile pileLogic = new Pile();
-            pileView.setLogicalPile(pileLogic); // <-- The crucial link
+            pileView.setLogicalPile(pileLogic); // The crucial link
 
             FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(pileWidth, pileHeight);
             params.leftMargin = dp(i * 80);
@@ -63,10 +70,10 @@ public class GamePage extends AppCompatActivity {
 
             for (int col = 0; col < cols; col++) {
                 for (int row = 0; row < rows; row++) {
-                    // --- FIX: Also create and link the logic here ---
+                    // Also create and link the logic here
                     PileView pileView = new PileView(this);
                     Pile pileLogic = new Pile();
-                    pileView.setLogicalPile(pileLogic); // <-- The crucial link
+                    pileView.setLogicalPile(pileLogic); // The crucial link
 
                     FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(pileWidth, pileHeight);
                     params.leftMargin = col * (pileWidth + spacingX);
@@ -88,8 +95,7 @@ public class GamePage extends AppCompatActivity {
             deck.shuffle();
 
             int pileIndex = 0;
-            List<Card> cardsToDeal = deck.getCards();
-            for (Card card : cardsToDeal) {
+            for (Card card : deck.getCards()) {
                 if (pileIndex == 4) { // Skip 5th pile
                     pileIndex = (pileIndex + 1) % leftPileViews.size();
                 }
@@ -99,7 +105,8 @@ public class GamePage extends AppCompatActivity {
                 // Create the CardView, passing it the master list of all *visual* piles
                 CardView cardView = new CardView(this, allPiles, card);
 
-                FrameLayout.LayoutParams cardParams = new FrameLayout.LayoutParams(cardWidth, cardHeight);
+                // We add the card to the root so it can be dragged anywhere on screen.
+                ConstraintLayout.LayoutParams cardParams = new ConstraintLayout.LayoutParams(cardWidth, cardHeight);
                 root.addView(cardView, cardParams);
 
                 // Use post() to ensure the cardView is measured before its initial snap
