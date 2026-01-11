@@ -1,6 +1,7 @@
 package com.example.tarotsolitaire;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.FrameLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout; // <-- IMPORT THE CORRECT LAYOUT
@@ -9,6 +10,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GamePage extends AppCompatActivity {
+
+    ConstraintLayout root;
+
+    // The rest of the views are still FrameLayouts, so these are correct.
+    FrameLayout playArea;
+    FrameLayout organizeArea;
+
+    // --- The rest of your logic remains unchanged as it was correct. ---
+
+    // Lists for both the UI views AND the game logic objects
+    List<PileView> leftPileViews;
+    List<Pile> leftPileLogics; // LOGIC
+    List<PileView> rightPileViews;
+    List<Pile> rightPileLogics; // LOGIC
+    List<PileView> allPiles; // Master list of views for CardView
+
+    private static final String TAG = "GamePage";
+
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
@@ -21,24 +40,44 @@ public class GamePage extends AppCompatActivity {
 
         // --- THIS IS THE FIX ---
         // The root variable is now correctly typed as ConstraintLayout to match your XML.
-        ConstraintLayout root = findViewById(R.id.rootLayout);
+        root = findViewById(R.id.rootLayout);
 
         // The rest of the views are still FrameLayouts, so these are correct.
-        FrameLayout playArea = findViewById(R.id.playArea);
-        FrameLayout organizeArea = findViewById(R.id.organizeArea);
+         playArea = findViewById(R.id.playArea);
+         organizeArea = findViewById(R.id.organizeArea);
 
         // --- The rest of your logic remains unchanged as it was correct. ---
 
         // Lists for both the UI views AND the game logic objects
-        List<PileView> leftPileViews = new ArrayList<>();
-        List<Pile> leftPileLogics = new ArrayList<>(); // LOGIC
-        List<PileView> rightPileViews = new ArrayList<>();
-        List<Pile> rightPileLogics = new ArrayList<>(); // LOGIC
-        List<PileView> allPiles = new ArrayList<>(); // Master list of views for CardView
+        leftPileViews = new ArrayList<>();
+        leftPileLogics = new ArrayList<>(); // LOGIC
+        rightPileViews = new ArrayList<>();
+        rightPileLogics = new ArrayList<>(); // LOGIC
+        allPiles = new ArrayList<>(); // Master list of views for CardView
 
-        int pileWidth = dp(70);
+
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+
+        // hasFocus is true when the Activity is visible and interactable
+        if (!hasFocus) {
+            return;
+        }
+
+
+        int playAreaWidth = playArea.getWidth();
+        int organizeAreaWidth = organizeArea.getWidth();
+
+        Log.d(TAG, "onWindowFocusChanged: play area width: " + playAreaWidth);
+        Log.d(TAG, "onWindowFocusChanged: organize area width: " + organizeAreaWidth);
+
+
+        int pileWidth = playAreaWidth / 9;
         int pileHeight = dp(100);
-        int cardWidth = dp(60);
+        int cardWidth = playAreaWidth / 9 - 20;
         int cardHeight = dp(90);
 
         /* ---------- 1. CREATE ALL VIEWS AND LOGIC ---------- */
@@ -51,8 +90,10 @@ public class GamePage extends AppCompatActivity {
             pileView.setLogicalPile(pileLogic); // The crucial link
 
             FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(pileWidth, pileHeight);
-            params.leftMargin = dp(i * 80);
+            params.leftMargin = i * pileWidth;
             params.topMargin = dp(40);
+
+            Log.d(TAG, "onWindowFocusChanged: adding pile #" + i + ", leftMargin: " + params.leftMargin);
 
             playArea.addView(pileView, params);
             leftPileViews.add(pileView);

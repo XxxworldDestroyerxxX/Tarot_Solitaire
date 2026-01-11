@@ -132,7 +132,7 @@ public class CardView extends View {
         if (animate) {
             animate().x(targetX).y(targetY).setDuration(100).start();
         } else {
-            setX(targetX);
+            setX((float) (targetX + 10));
             setY(targetY);
         }
     }
