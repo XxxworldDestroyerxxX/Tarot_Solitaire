@@ -1,117 +1,87 @@
 package com.example.tarotsolitaire;
 
 import android.os.Bundle;
-import android.widget.FrameLayout;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout; // <-- IMPORT THE CORRECT LAYOUT
-
+import androidx.constraintlayout.widget.ConstraintLayout;
 import java.util.ArrayList;
 import java.util.List;
 
 public class GamePage extends AppCompatActivity {
 
-    private int dp(int value) {
-        return Math.round(value * getResources().getDisplayMetrics().density);
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // This line inflates our new, powerful, declarative XML layout.
         setContentView(R.layout.activity_game_page);
 
-        // --- THIS IS THE FIX ---
-        // The root variable is now correctly typed as ConstraintLayout to match your XML.
         ConstraintLayout root = findViewById(R.id.rootLayout);
 
-        // The rest of the views are still FrameLayouts, so these are correct.
-        FrameLayout playArea = findViewById(R.id.playArea);
-        FrameLayout organizeArea = findViewById(R.id.organizeArea);
-
-        // --- The rest of your logic remains unchanged as it was correct. ---
-
-        // Lists for both the UI views AND the game logic objects
+        // --- Lists to hold our views and logic objects ---
         List<PileView> leftPileViews = new ArrayList<>();
-        List<Pile> leftPileLogics = new ArrayList<>(); // LOGIC
         List<PileView> rightPileViews = new ArrayList<>();
-        List<Pile> rightPileLogics = new ArrayList<>(); // LOGIC
-        List<PileView> allPiles = new ArrayList<>(); // Master list of views for CardView
+        List<PileView> allPiles = new ArrayList<>();
 
-        int pileWidth = dp(70);
-        int pileHeight = dp(100);
-        int cardWidth = dp(60);
-        int cardHeight = dp(90);
+        // --- 1. FIND ALL VIEWS FROM THE XML ---
+        // We find them by the IDs assigned in the XML file.
+        leftPileViews.add(findViewById(R.id.playPile1));
+        leftPileViews.add(findViewById(R.id.playPile2));
+        leftPileViews.add(findViewById(R.id.playPile3));
+        leftPileViews.add(findViewById(R.id.playPile4));
+        leftPileViews.add(findViewById(R.id.playPile5_empty));
+        leftPileViews.add(findViewById(R.id.playPile6));
+        leftPileViews.add(findViewById(R.id.playPile7));
+        leftPileViews.add(findViewById(R.id.playPile8));
+        leftPileViews.add(findViewById(R.id.playPile9));
 
-        /* ---------- 1. CREATE ALL VIEWS AND LOGIC ---------- */
+        rightPileViews.add(findViewById(R.id.organizePile1));
+        rightPileViews.add(findViewById(R.id.organizePile2));
+        rightPileViews.add(findViewById(R.id.organizePile3));
+        rightPileViews.add(findViewById(R.id.organizePile4));
+        rightPileViews.add(findViewById(R.id.organizePile5));
+        rightPileViews.add(findViewById(R.id.organizePile6));
 
-        // LEFT PLAY AREA (9 piles)
-        for (int i = 0; i < 9; i++) {
-            // Create and link both the view and the logic
-            PileView pileView = new PileView(this);
+        // --- 2. CREATE AND LINK THE LOGIC ---
+        // This part is the same: we give each PileView its logical "brain".
+        for (PileView pileView : leftPileViews) {
             Pile pileLogic = new Pile();
-            pileView.setLogicalPile(pileLogic); // The crucial link
-
-            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(pileWidth, pileHeight);
-            params.leftMargin = dp(i * 80);
-            params.topMargin = dp(40);
-
-            playArea.addView(pileView, params);
-            leftPileViews.add(pileView);
-            leftPileLogics.add(pileLogic);
+            pileView.setLogicalPile(pileLogic);
+        }
+        for (PileView pileView : rightPileViews) {
+            Pile pileLogic = new Pile();
+            pileView.setLogicalPile(pileLogic);
         }
 
-        /* ---------- 2. WAIT FOR LAYOUT, THEN CREATE RIGHT PILES & DEAL ---------- */
-        organizeArea.post(() -> {
-            // RIGHT ORGANIZE AREA (6 piles)
-            int areaHeight = organizeArea.getHeight();
-            int rows = 3;
-            int cols = 2;
-            int spacingX = 0;
-            int spacingY = (areaHeight - rows * pileHeight) / (rows + 1);
+        // --- Create the master list of all UI piles ---
+        allPiles.addAll(leftPileViews);
+        allPiles.addAll(rightPileViews);
 
-            for (int col = 0; col < cols; col++) {
-                for (int row = 0; row < rows; row++) {
-                    // Also create and link the logic here
-                    PileView pileView = new PileView(this);
-                    Pile pileLogic = new Pile();
-                    pileView.setLogicalPile(pileLogic); // The crucial link
 
-                    FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(pileWidth, pileHeight);
-                    params.leftMargin = col * (pileWidth + spacingX);
-                    params.topMargin = spacingY + row * (pileHeight + spacingY);
-
-                    organizeArea.addView(pileView, params);
-                    rightPileViews.add(pileView);
-                    rightPileLogics.add(pileLogic);
-                }
-            }
-
-            // --- Create the master 'allPiles' list of VIEWS ---
-            allPiles.clear();
-            allPiles.addAll(leftPileViews);
-            allPiles.addAll(rightPileViews);
-
-            /* ---------- 3. DEAL CARDS ---------- */
+        // --- 3. DEAL THE CARDS ---
+        // We use post() to ensure the XML layout has been fully measured before we deal.
+        // This guarantees that getWidth() and getHeight() will return correct values.
+        root.post(() -> {
             Deck deck = new Deck();
             deck.shuffle();
 
+            // Set the card size based on the size of a pile that now exists on screen.
+            // This is how the cards also become responsive!
+            int cardWidth = (int) getResources().getDimension(R.dimen.card_width);
+            int cardHeight = (int) getResources().getDimension(R.dimen.card_height);
+
             int pileIndex = 0;
             for (Card card : deck.getCards()) {
-                if (pileIndex == 4) { // Skip 5th pile
+                if (pileIndex == 4) { // Skip 5th pile (index 4)
                     pileIndex = (pileIndex + 1) % leftPileViews.size();
                 }
 
                 PileView targetPileView = leftPileViews.get(pileIndex);
 
-                // Create the CardView, passing it the master list of all *visual* piles
                 CardView cardView = new CardView(this, allPiles, card);
-
-                // We add the card to the root so it can be dragged anywhere on screen.
                 ConstraintLayout.LayoutParams cardParams = new ConstraintLayout.LayoutParams(cardWidth, cardHeight);
                 root.addView(cardView, cardParams);
 
-                // Use post() to ensure the cardView is measured before its initial snap
-                final PileView finalTargetPile = targetPileView;
-                cardView.post(() -> cardView.snapToPile(finalTargetPile, false));
+                // Use post() on the cardView to ensure it's measured before its initial snap.
+                cardView.post(() -> cardView.snapToPile(targetPileView, false));
 
                 pileIndex = (pileIndex + 1) % leftPileViews.size();
             }
