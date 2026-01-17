@@ -13,4 +13,8 @@
     <string name="restart">Restart</string>
     <string name="timer_initial">0:00</string>
     <string name="restarting_toast">Restarting...</string>
+    <string name="undo">Undo</string>
+    <string name="undo_none">Nothing to undo</string>
+    <string name="undo_done">Undo performed</string>
+    <string name="debug_toggle">Debug</string>
 </resources>

@@ -84,6 +84,8 @@ public class Card {
         if (type == Type.TAROT) {
             return "T"; // simple marker for tarot cards
         }
+        // Guard against null suit to satisfy static analysis (tarot uses null suit)
+        if (suit == null) return "?";
         switch (suit) {
             case HEARTS:   return "♥";
             case DIAMONDS: return "♦";

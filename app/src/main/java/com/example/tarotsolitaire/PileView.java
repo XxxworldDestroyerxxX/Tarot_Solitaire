@@ -25,6 +25,10 @@ public class PileView extends FrameLayout {
 
     private boolean showLock = false; // whether to draw a small lock icon
 
+    // Highlight state for drag-over feedback
+    private boolean highlighted = false;
+    private final Paint highlightPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
     public PileView(Context context, AttributeSet attrs) {
         super(context, attrs);
         setWillNotDraw(false); // Enable onDraw for this layout
@@ -37,6 +41,10 @@ public class PileView extends FrameLayout {
 
         labelPaint.setColor(Color.WHITE);
         labelPaint.setTextAlign(Paint.Align.CENTER);
+
+        highlightPaint.setStyle(Paint.Style.FILL);
+        // subtle semi-transparent highlight (white tint); you may tweak alpha/color
+        highlightPaint.setColor(Color.argb(36, 255, 255, 255));
     }
 
     public PileView(Context context) {
@@ -60,10 +68,26 @@ public class PileView extends FrameLayout {
         invalidate();
     }
 
+    // Expose the label text for debugging/annotations
+    public String getLabel() {
+        return this.labelText;
+    }
+
     public void setShowLock(boolean show) {
         this.showLock = show;
         invalidate();
     }
+
+    /**
+     * Called by CardView while dragging to indicate this pile is a valid target.
+     */
+    public void setHighlighted(boolean on) {
+        if (this.highlighted == on) return;
+        this.highlighted = on;
+        invalidate();
+    }
+
+    public boolean isHighlighted() { return highlighted; }
 
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
@@ -76,6 +100,10 @@ public class PileView extends FrameLayout {
         float half = stroke / 2f;
         rect.set(half, half, w - half, h - half);
         float radius = 16f;
+        // Draw subtle highlight before border if requested
+        if (highlighted) {
+            canvas.drawRoundRect(rect, radius, radius, highlightPaint);
+        }
         canvas.drawRoundRect(rect, radius, radius, paint);
 
         // Draw label if present

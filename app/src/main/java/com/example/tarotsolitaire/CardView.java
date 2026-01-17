@@ -10,6 +10,7 @@ import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.util.Log;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 import androidx.annotation.NonNull;
@@ -31,6 +32,11 @@ public class CardView extends View {
     private Paint iconPaint;
     private Paint iconTextPaint;
     private Paint labelPaint; // bold top-left number indicator
+
+    // Track which pile we are currently hovering (for highlight/haptic)
+    private PileView hoveredPile = null;
+    // Debug overlay reference (optional)
+    private DebugOverlay debugOverlay = null;
 
     // Standard constructors so tools/layout inflation won't warn
     public CardView(Context context) {
@@ -77,6 +83,8 @@ public class CardView extends View {
 
     public void setAllPiles(List<PileView> piles) { this.allPiles = piles; }
     public void setCard(Card card) { this.card = card; }
+
+    public void setDebugOverlay(DebugOverlay overlay) { this.debugOverlay = overlay; }
 
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
@@ -195,12 +203,100 @@ public class CardView extends View {
             case MotionEvent.ACTION_MOVE:
                 setX(event.getRawX() - offsetX);
                 setY(event.getRawY() - offsetY);
+                // During move, update hovered pile highlighting
+                updateHover();
                 return true;
             case MotionEvent.ACTION_UP:
+                // clear hover highlight on release
+                clearHover();
                 trySnapToPile();
                 return true;
         }
         return super.onTouchEvent(event);
+    }
+
+    // Update which pile (if any) is being hovered while dragging
+    private void updateHover() {
+        if (allPiles == null || card == null) return;
+
+        PileView best = null;
+        float cardCenterX = getX() + getWidth() / 2f;
+        float cardCenterY = getY() + getHeight() / 2f;
+        float bestDistance = Float.MAX_VALUE;
+
+        // If debug overlay exists and visible, prepare shapes list
+        java.util.List<DebugOverlay.Shape> debugShapes = null;
+        boolean debugOn = (debugOverlay != null && debugOverlay.getVisibility() == View.VISIBLE);
+        if (debugOn) debugShapes = new java.util.ArrayList<>();
+
+        for (PileView pileView : allPiles) {
+            if (pileView == null || pileView.getLogicalPile() == null) continue;
+            if (!pileView.getLogicalPile().canPlaceCard(this.card)) continue;
+
+            float multiplier = pileView.getLogicalPile().getStackOffsetMultiplier();
+            float stackOffset = pileView.getHeight() * multiplier * pileView.getLogicalPile().getCards().size();
+            float pileLeft = pileView.getX();
+            float pileTop = pileView.getY() + stackOffset;
+            float pileRight = pileLeft + pileView.getWidth();
+            float pileBottom = pileTop + pileView.getHeight();
+
+            float padding = Math.max(12f, Math.min(getWidth() * 0.25f, pileView.getWidth() * 0.12f));
+            if (cardCenterX >= pileLeft - padding && cardCenterX <= pileRight + padding
+                    && cardCenterY >= pileTop - padding && cardCenterY <= pileBottom + padding) {
+                best = pileView;
+                if (debugOn) {
+                    // add padded rect and threshold circle shape
+                    float cx = pileLeft + pileView.getWidth() / 2f;
+                    float cy = pileTop + pileView.getHeight() / 2f;
+                    float thresh = Math.max(getWidth(), pileView.getWidth()) * 0.65f;
+                    debugShapes.add(new DebugOverlay.Shape(pileLeft - padding, pileTop - padding, pileRight + padding, pileBottom + padding, cx, cy, thresh, 0xFFFFAA00, pileView.getLabel() == null ? "" : pileView.getLabel()));
+                }
+                break;
+            }
+
+            float pileTargetX = pileLeft + pileView.getWidth() / 2f;
+            float pileTargetY = pileTop + pileView.getHeight() / 2f;
+            double distance = Math.sqrt(Math.pow(cardCenterX - pileTargetX, 2) + Math.pow(cardCenterY - pileTargetY, 2));
+            float threshold = Math.max(getWidth(), pileView.getWidth()) * 0.65f; // slightly tuned
+            if (distance < threshold && distance < bestDistance) {
+                bestDistance = (float) distance;
+                best = pileView;
+            }
+
+            if (debugOn) {
+                float cx = pileTargetX;
+                float cy = pileTargetY;
+                float thresh = Math.max(getWidth(), pileView.getWidth()) * 0.65f;
+                debugShapes.add(new DebugOverlay.Shape(pileLeft - padding, pileTop - padding, pileRight + padding, pileBottom + padding, cx, cy, thresh, 0xFF00BFFF, pileView.getLabel() == null ? "" : pileView.getLabel()));
+            }
+        }
+
+        // If best changed, update highlights and fire haptic once
+        if (best != hoveredPile) {
+            if (hoveredPile != null) hoveredPile.setHighlighted(false);
+            hoveredPile = best;
+            if (hoveredPile != null) {
+                hoveredPile.setHighlighted(true);
+                // single short haptic feedback on enter
+                try {
+                    this.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                } catch (Exception ignored) {}
+            }
+        }
+
+        if (debugOn && debugOverlay != null) {
+            debugOverlay.updateShapes(debugShapes);
+        }
+    }
+
+    private void clearHover() {
+        if (hoveredPile != null) {
+            hoveredPile.setHighlighted(false);
+            hoveredPile = null;
+        }
+        if (debugOverlay != null && debugOverlay.getVisibility() == View.VISIBLE) {
+            debugOverlay.clear();
+        }
     }
 
     private void trySnapToPile() {
@@ -215,19 +311,42 @@ public class CardView extends View {
         for (PileView pileView : allPiles) {
             if (pileView != null && pileView.getLogicalPile() != null) {
                 if (pileView.getLogicalPile().canPlaceCard(this.card)) {
-                    float pileTargetX = pileView.getX() + pileView.getWidth() / 2f;
                     float multiplier = pileView.getLogicalPile().getStackOffsetMultiplier();
                     float stackOffset = pileView.getHeight() * multiplier * pileView.getLogicalPile().getCards().size();
-                    float pileTargetY = pileView.getY() + stackOffset;
+                    float pileLeft = pileView.getX();
+                    float pileTop = pileView.getY() + stackOffset;
+                    float pileRight = pileLeft + pileView.getWidth();
+                    float pileBottom = pileTop + pileView.getHeight();
+
+                    // First: if card center lies within the pile rect (with small padding), choose it immediately
+                    float padding = Math.max(8f, Math.min(getWidth() * 0.25f, pileView.getWidth() * 0.1f));
+                    if (cardCenterX >= pileLeft - padding && cardCenterX <= pileRight + padding
+                            && cardCenterY >= pileTop - padding && cardCenterY <= pileBottom + padding) {
+                        closestLegalPile = pileView;
+                        break; // best possible match
+                    }
+
+                    // Fallback: distance-based check with pile-aware threshold
+                    float pileTargetX = pileLeft + pileView.getWidth() / 2f;
+                    float pileTargetY = pileTop + pileView.getHeight() / 2f;
 
                     double distance = Math.sqrt(Math.pow(cardCenterX - pileTargetX, 2) + Math.pow(cardCenterY - pileTargetY, 2));
 
-                    if (distance < getWidth() && distance < minDistance) {
+                    // Use a threshold that depends on both card and pile size to avoid "swallowing" by neighbors
+                    float threshold = Math.max(getWidth(), pileView.getWidth()) * 0.6f;
+
+                    if (distance < threshold && distance < minDistance) {
                         minDistance = (float) distance;
                         closestLegalPile = pileView;
                     }
                 }
             }
+        }
+
+        // clear hover highlight when snapping
+        if (hoveredPile != null) {
+            hoveredPile.setHighlighted(false);
+            hoveredPile = null;
         }
 
         if (closestLegalPile != null) {
@@ -243,6 +362,9 @@ public class CardView extends View {
             if (currentPile != null) snapToPile(currentPile, true); // Fallback
             return;
         }
+
+        // Capture previous pile for undo purposes
+        PileView previousPile = this.currentPile;
 
         // Update logic first
         if (currentPile != null && currentPile.getLogicalPile() != null) {
@@ -265,16 +387,16 @@ public class CardView extends View {
 
         if (animate) {
             animate().x(targetX).y(targetY).setDuration(100).withEndAction(() -> {
-                // Notify placement
+                // Notify placement and include previous pile for undo
                 if (onPlacedListener != null) {
-                    onPlacedListener.onPlaced(card, pile);
+                    onPlacedListener.onPlaced(card, previousPile, pile);
                 }
             }).start();
         } else {
             setX(targetX);
             setY(targetY);
             if (onPlacedListener != null) {
-                onPlacedListener.onPlaced(card, pile);
+                onPlacedListener.onPlaced(card, previousPile, pile);
             }
         }
     }
@@ -285,7 +407,7 @@ public class CardView extends View {
     }
 
     public interface OnPlacedListener {
-        void onPlaced(Card card, PileView pile);
+        void onPlaced(Card card, PileView fromPile, PileView toPile);
     }
 
     private OnPlacedListener onPlacedListener;
