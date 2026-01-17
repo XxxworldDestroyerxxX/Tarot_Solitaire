@@ -19,6 +19,10 @@ public class PileView extends FrameLayout {
 
     private Pile logicalPile; // The crucial link to the game logic
 
+    // Label for organize piles (e.g., "♥ 2→" or "T 0→")
+    private String labelText = null;
+    private final Paint labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
     public PileView(Context context, AttributeSet attrs) {
         super(context, attrs);
         setWillNotDraw(false); // Enable onDraw for this layout
@@ -28,6 +32,9 @@ public class PileView extends FrameLayout {
         paint.setStrokeWidth(4f);
         paint.setColor(Color.WHITE);
         rect = new RectF();
+
+        labelPaint.setColor(Color.WHITE);
+        labelPaint.setTextAlign(Paint.Align.CENTER);
     }
 
     public PileView(Context context) {
@@ -43,6 +50,14 @@ public class PileView extends FrameLayout {
         return this.logicalPile;
     }
 
+    /**
+     * Set a short label to draw at the top of the pile (e.g., suit or tarot rule indicator).
+     */
+    public void setLabel(String label) {
+        this.labelText = label;
+        invalidate();
+    }
+
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
@@ -55,6 +70,17 @@ public class PileView extends FrameLayout {
         rect.set(half, half, w - half, h - half);
         float radius = 16f;
         canvas.drawRoundRect(rect, radius, radius, paint);
+
+        // Draw label if present
+        if (labelText != null && !labelText.isEmpty()) {
+            // Choose a size proportional to pile height
+            float labelSize = Math.max(10f, Math.min(24f, h * 0.12f));
+            labelPaint.setTextSize(labelSize);
+            // Draw at top center inside the border with small padding
+            float x = w / 2f;
+            float y = labelSize + 6f; // simple padding from top
+            canvas.drawText(labelText, x, y, labelPaint);
+        }
     }
 
     // --- CARDVIEW MANAGEMENT ---

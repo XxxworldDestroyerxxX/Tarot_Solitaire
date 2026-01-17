@@ -4,6 +4,8 @@ import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import android.util.TypedValue;
+import android.view.View;
+import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,10 +51,129 @@ public class GamePage extends AppCompatActivity {
             Pile pileLogic = new Pile();
             pileView.setLogicalPile(pileLogic);
         }
-        for (PileView pileView : rightPileViews) {
-            Pile pileLogic = new Pile();
-            pileView.setLogicalPile(pileLogic);
+        // Right-side organize piles are special: they accept only certain cards and overlay them.
+        for (int i = 0; i < rightPileViews.size(); i++) {
+            PileView pileView = rightPileViews.get(i);
+            if (pileView == null) continue;
+
+            // Map the first four organize piles to suits. Assumption (change if needed):
+            // index 0 -> HEARTS, 1 -> DIAMONDS, 2 -> CLUBS, 3 -> SPADES
+            if (i >= 0 && i <= 3) {
+                final Card.Suit expectedSuit;
+                switch (i) {
+                    case 0: expectedSuit = Card.Suit.HEARTS; break;
+                    case 1: expectedSuit = Card.Suit.DIAMONDS; break;
+                    case 2: expectedSuit = Card.Suit.CLUBS; break;
+                    default: expectedSuit = Card.Suit.SPADES; break;
+                }
+
+                SpecialPile.PlacementRule suitRule = (pile, card) -> {
+                    if (card == null) return false;
+                    if (card.getType() != Card.Type.STANDARD) return false; // only standard cards
+                    if (card.getSuit() != expectedSuit) return false; // must match suit
+                    // On empty pile only a '2' can be placed
+                    if (pile.isEmpty()) return card.getRank() == 2;
+                    // Otherwise must be exactly one higher than current top
+                    Card top = pile.getTopCard();
+                    if (top == null || top.getType() != Card.Type.STANDARD) return false;
+                    return card.getRank() == top.getRank() + 1;
+                };
+
+                SpecialPile suitPile = new SpecialPile(suitRule);
+                pileView.setLogicalPile(suitPile);
+            } else if (i == 4) {
+                // First bottom pile: tarot ascending from 0 upward
+                SpecialPile.PlacementRule tarotAsc = (pile, card) -> {
+                    if (card == null) return false;
+                    if (card.getType() != Card.Type.TAROT) return false;
+                    if (pile.isEmpty()) return card.getRank() == 0;
+                    Card top = pile.getTopCard();
+                    if (top == null || top.getType() != Card.Type.TAROT) return false;
+                    return card.getRank() == top.getRank() + 1;
+                };
+                SpecialPile ascPile = new SpecialPile(tarotAsc);
+                pileView.setLogicalPile(ascPile);
+            } else if (i == 5) {
+                // Second bottom pile: tarot descending from 21 downward
+                SpecialPile.PlacementRule tarotDesc = (pile, card) -> {
+                    if (card == null) return false;
+                    if (card.getType() != Card.Type.TAROT) return false;
+                    if (pile.isEmpty()) return card.getRank() == 21;
+                    Card top = pile.getTopCard();
+                    if (top == null || top.getType() != Card.Type.TAROT) return false;
+                    return card.getRank() == top.getRank() - 1;
+                };
+                SpecialPile descPile = new SpecialPile(tarotDesc);
+                pileView.setLogicalPile(descPile);
+            } else {
+                // Fallback: default special pile (tarot-only)
+                SpecialPile special = new SpecialPile();
+                pileView.setLogicalPile(special);
+            }
         }
+
+        // Add visual labels to the organize piles to show their rule (suit or tarot start)
+        if (rightPileViews.size() >= 6) {
+            rightPileViews.get(0).setLabel("♥: 2→");
+            rightPileViews.get(1).setLabel("♦: 2→");
+            rightPileViews.get(2).setLabel("♣: 2→");
+            rightPileViews.get(3).setLabel("♠: 2→");
+            rightPileViews.get(4).setLabel("T: 0→");
+            rightPileViews.get(5).setLabel("T: 21←");
+        }
+
+        // Simple win overlay (hidden initially)
+        final View winOverlay = new View(this);
+        winOverlay.setBackgroundColor(0xAA000000); // translucent black
+        ConstraintLayout.LayoutParams overlayParams = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.MATCH_PARENT);
+        winOverlay.setLayoutParams(overlayParams);
+        winOverlay.setVisibility(View.GONE);
+        root.addView(winOverlay);
+
+        final TextView winText = new TextView(this);
+        winText.setText("You win!");
+        winText.setTextColor(android.graphics.Color.WHITE);
+        winText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 32);
+        winText.setVisibility(View.GONE);
+        ConstraintLayout.LayoutParams wtParams = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT, ConstraintLayout.LayoutParams.WRAP_CONTENT);
+        wtParams.leftToLeft = ConstraintLayout.LayoutParams.PARENT_ID;
+        wtParams.rightToRight = ConstraintLayout.LayoutParams.PARENT_ID;
+        wtParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
+        wtParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
+        winText.setLayoutParams(wtParams);
+        root.addView(winText);
+
+        // Helper to check win: all cards moved from play piles into organize piles
+        Runnable checkWin = () -> {
+            int totalCardsInPlay = 0;
+            for (PileView pv : leftPileViews) {
+                if (pv == null || pv.getLogicalPile() == null) continue;
+                totalCardsInPlay += pv.getLogicalPile().getCards().size();
+            }
+            // Total cards in game: deck size without aces + tarot = left piles + right piles
+            int totalLeft = 0;
+            for (PileView pv : leftPileViews) {
+                if (pv == null || pv.getLogicalPile() == null) continue;
+                totalLeft += pv.getLogicalPile().getCards().size();
+            }
+            int totalRight = 0;
+            for (PileView pv : rightPileViews) {
+                if (pv == null || pv.getLogicalPile() == null) continue;
+                totalRight += pv.getLogicalPile().getCards().size();
+            }
+            int totalInGame = totalLeft + totalRight;
+
+            // Win if no cards remain in play area (all are in right piles)
+            boolean won = true;
+            for (PileView pv : leftPileViews) {
+                if (pv == null || pv.getLogicalPile() == null) continue;
+                if (!pv.getLogicalPile().isEmpty()) { won = false; break; }
+            }
+            if (won) {
+                winOverlay.setVisibility(View.VISIBLE);
+                winText.setVisibility(View.VISIBLE);
+            }
+        };
 
         // --- Create the master list of all UI piles ---
         allPiles.addAll(leftPileViews);
@@ -135,6 +256,8 @@ public class GamePage extends AppCompatActivity {
                 CardView cardView = new CardView(this);
                 cardView.setAllPiles(allPiles);
                 cardView.setCard(card);
+                // Listen for placements to check win condition
+                cardView.setOnPlacedListener((placedCard, placedPile) -> runOnUiThread(checkWin));
                 ConstraintLayout.LayoutParams cardParams = new ConstraintLayout.LayoutParams(cardWidth, cardHeight);
                 // Keep card params unconstrained; snapToPile will place them
                 root.addView(cardView, cardParams);

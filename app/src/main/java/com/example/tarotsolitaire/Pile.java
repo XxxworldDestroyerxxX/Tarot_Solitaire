@@ -26,6 +26,15 @@ public class Pile {
         return cardToPlace.canBePlacedOn(topCard);
     }
 
+    /**
+     * Returns how much vertical stack offset (as a fraction of pile height) should be applied
+     * per card in this pile when laying out card views. Default is 0.28 (28%).
+     * Special piles can override this to return 0 so cards fully overlap.
+     */
+    public float getStackOffsetMultiplier() {
+        return 0.28f;
+    }
+
     // --- Standard list management methods ---
     public void addCard(Card card) {
         if (!cards.contains(card)) {

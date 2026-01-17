@@ -216,7 +216,8 @@ public class CardView extends View {
             if (pileView != null && pileView.getLogicalPile() != null) {
                 if (pileView.getLogicalPile().canPlaceCard(this.card)) {
                     float pileTargetX = pileView.getX() + pileView.getWidth() / 2f;
-                    float stackOffset = pileView.getHeight() * 0.28f * pileView.getLogicalPile().getCards().size();
+                    float multiplier = pileView.getLogicalPile().getStackOffsetMultiplier();
+                    float stackOffset = pileView.getHeight() * multiplier * pileView.getLogicalPile().getCards().size();
                     float pileTargetY = pileView.getY() + stackOffset;
 
                     double distance = Math.sqrt(Math.pow(cardCenterX - pileTargetX, 2) + Math.pow(cardCenterY - pileTargetY, 2));
@@ -256,16 +257,25 @@ public class CardView extends View {
         pile.addCardView(this); // This calls setCurrentPile
 
         // Animate to final position
-        float stackOffset = pile.getHeight() * 0.28f * (pile.getLogicalPile().getCards().size() - 1);
+        float multiplier = pile.getLogicalPile().getStackOffsetMultiplier();
+        float stackOffset = pile.getHeight() * multiplier * (pile.getLogicalPile().getCards().size() - 1);
         // Center the card horizontally within the pile to avoid misalignment
         float targetX = pile.getX() + (pile.getWidth() - getWidth()) / 2f;
         float targetY = pile.getY() + stackOffset;
 
         if (animate) {
-            animate().x(targetX).y(targetY).setDuration(100).start();
+            animate().x(targetX).y(targetY).setDuration(100).withEndAction(() -> {
+                // Notify placement
+                if (onPlacedListener != null) {
+                    onPlacedListener.onPlaced(card, pile);
+                }
+            }).start();
         } else {
-            setX((float) (targetX + 10));
+            setX(targetX);
             setY(targetY);
+            if (onPlacedListener != null) {
+                onPlacedListener.onPlaced(card, pile);
+            }
         }
     }
 
@@ -273,6 +283,14 @@ public class CardView extends View {
     public void setCurrentPile(PileView pile) {
         this.currentPile = pile;
     }
+
+    public interface OnPlacedListener {
+        void onPlaced(Card card, PileView pile);
+    }
+
+    private OnPlacedListener onPlacedListener;
+
+    public void setOnPlacedListener(OnPlacedListener listener) { this.onPlacedListener = listener; }
 
     @Override
     public boolean performClick() {
