@@ -105,7 +105,9 @@ public class GamePage extends AppCompatActivity {
 
                 PileView targetPileView = leftPileViews.get(pileIndex);
 
-                CardView cardView = new CardView(this, allPiles, card);
+                CardView cardView = new CardView(this);
+                cardView.setAllPiles(allPiles);
+                cardView.setCard(card);
                 ConstraintLayout.LayoutParams cardParams = new ConstraintLayout.LayoutParams(cardWidth, cardHeight);
                 // Keep card params unconstrained; snapToPile will place them
                 root.addView(cardView, cardParams);

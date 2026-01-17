@@ -1,5 +1,6 @@
 package com.example.tarotsolitaire;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -10,58 +11,158 @@ import android.util.TypedValue;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import androidx.annotation.NonNull;
 import java.util.List;
 
+@SuppressLint("ViewConstructor")
 public class CardView extends View {
 
-    private final List<PileView> allPiles;
+    private List<PileView> allPiles; // may be null when inflated by tools
     private PileView currentPile;
-    private final Card card; // The logical card
+    private Card card; // The logical card (may be null for layout inflation)
 
     private float offsetX, offsetY;
-    private final Paint paint;
-    private final RectF rect;
-    private final Paint textPaint;
+    private Paint paint;
+    private RectF rect;
+    private Paint textPaint;
 
-    public CardView(Context context, List<PileView> piles, Card card) {
+    // Preallocated paints for tarot icon to avoid allocations in onDraw
+    private Paint iconPaint;
+    private Paint iconTextPaint;
+
+    // Standard constructors so tools/layout inflation won't warn
+    public CardView(Context context) {
         super(context);
-        this.allPiles = piles;
-        this.card = card;
+        init();
+    }
 
+    public CardView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        init();
+    }
+
+    public CardView(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+        init();
+    }
+
+    private void init() {
         paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setColor(Color.WHITE);
         rect = new RectF();
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        textPaint.setColor(Color.BLACK);
-        // Fixed text size ~14sp to mirror previous appearance
+        // Default text size; will be adjusted based on card height when drawing
         textPaint.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14, getResources().getDisplayMetrics()));
+        textPaint.setTextAlign(Paint.Align.CENTER);
+
+        iconPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        iconPaint.setStyle(Paint.Style.FILL);
+        iconPaint.setColor(Color.rgb(212, 175, 55));
+
+        iconTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        iconTextPaint.setColor(Color.WHITE);
+        iconTextPaint.setTextAlign(Paint.Align.CENTER);
     }
 
     public Card getCard() {
         return this.card;
     }
 
+    public void setAllPiles(List<PileView> piles) { this.allPiles = piles; }
+    public void setCard(Card card) { this.card = card; }
+
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
         rect.set(0, 0, getWidth(), getHeight());
 
-        // Reverted to simpler fixed visuals for consistent look
         float radius = 16f;
         float stroke = 4f;
 
-        paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.WHITE);
-        canvas.drawRoundRect(rect, radius, radius, paint);
+        if (card != null && card.getType() == Card.Type.TAROT) {
+            // Tarot cards: black background, gold border, white centered number and a small gold icon
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.BLACK);
+            canvas.drawRoundRect(rect, radius, radius, paint);
 
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setColor(Color.BLACK);
-        paint.setStrokeWidth(stroke);
-        canvas.drawRoundRect(rect, radius, radius, paint);
+            paint.setStyle(Paint.Style.STROKE);
+            // gold-ish border
+            paint.setColor(Color.rgb(212, 175, 55));
+            paint.setStrokeWidth(6f); // thicker border for tarot
+            canvas.drawRoundRect(rect, radius, radius, paint);
 
-        // Draw rank + suit in fixed-ish positions
-        canvas.drawText(card.getRankString(), getWidth() * 0.12f, getHeight() * 0.28f, textPaint);
-        canvas.drawText(card.getSuitSymbol(), getWidth() * 0.12f, getHeight() * 0.52f, textPaint);
+            // Centered white text for tarot number
+            textPaint.setColor(Color.WHITE);
+            float textSize = Math.max(14f, Math.min(40f, getHeight() * 0.32f));
+            textPaint.setTextSize(textSize);
+            textPaint.setTextAlign(Paint.Align.CENTER);
+            float x = getWidth() / 2f;
+            Paint.FontMetrics fm = textPaint.getFontMetrics();
+            float y = getHeight() / 2f - (fm.ascent + fm.descent) / 2f;
+            canvas.drawText(card.getRankString(), x, y, textPaint);
+
+            // Draw small gold circular icon at top-right using preallocated paint
+            float iconRadius = Math.max(8f, getWidth() * 0.12f);
+            float iconCx = getWidth() - iconRadius - 6f;
+            float iconCy = iconRadius + 6f;
+            canvas.drawCircle(iconCx, iconCy, iconRadius, iconPaint);
+
+            // White 'T' inside icon
+            float iconTextSize = iconRadius * 1.1f;
+            iconTextPaint.setTextSize(iconTextSize);
+            Paint.FontMetrics ifm = iconTextPaint.getFontMetrics();
+            float iy = iconCy - (ifm.ascent + ifm.descent) / 2f;
+            canvas.drawText("T", iconCx, iy, iconTextPaint);
+
+        } else if (card != null) {
+            // Standard card appearance: white background, black stroke and colored suit/rank
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.WHITE);
+            canvas.drawRoundRect(rect, radius, radius, paint);
+
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setColor(Color.BLACK);
+            paint.setStrokeWidth(stroke);
+            canvas.drawRoundRect(rect, radius, radius, paint);
+
+            // Larger colored text for standard cards
+            // Color mapping by suit
+            int suitColor = Color.BLACK;
+            switch (card.getSuit()) {
+                case HEARTS:
+                    suitColor = Color.parseColor("#D32F2F"); // red
+                    break;
+                case DIAMONDS:
+                    suitColor = Color.parseColor("#1976D2"); // blue
+                    break;
+                case CLUBS:
+                    suitColor = Color.parseColor("#388E3C"); // green
+                    break;
+                case SPADES:
+                    suitColor = Color.parseColor("#FBC02D"); // yellow
+                    break;
+            }
+
+            // Rank text (bigger)
+            textPaint.setTextAlign(Paint.Align.LEFT);
+            textPaint.setColor(suitColor);
+            float rankTextSize = Math.max(18f, Math.min(36f, getHeight() * 0.36f));
+            textPaint.setTextSize(rankTextSize);
+            float rx = getWidth() * 0.12f;
+            Paint.FontMetrics rfm = textPaint.getFontMetrics();
+            float ry = getHeight() * 0.32f - (rfm.ascent + rfm.descent) / 2f;
+            canvas.drawText(card.getRankString(), rx, ry, textPaint);
+
+            // Suit symbol (slightly smaller)
+            textPaint.setTextSize(Math.max(14f, rankTextSize * 0.8f));
+            float sy = getHeight() * 0.62f - (rfm.ascent + rfm.descent) / 2f;
+            canvas.drawText(card.getSuitSymbol(), rx, sy, textPaint);
+        } else {
+            // Preview or placeholder - draw blank card outline
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setColor(Color.BLACK);
+            paint.setStrokeWidth(stroke);
+            canvas.drawRoundRect(rect, radius, radius, paint);
+        }
     }
 
     @Override
@@ -94,7 +195,7 @@ public class CardView extends View {
         float cardCenterX = getX() + getWidth() / 2f;
         float cardCenterY = getY() + getHeight() / 2f;
 
-        if (allPiles == null) return;
+        if (allPiles == null || card == null) return;
 
         for (PileView pileView : allPiles) {
             if (pileView != null && pileView.getLogicalPile() != null) {
@@ -121,8 +222,8 @@ public class CardView extends View {
     }
 
     public void snapToPile(PileView pile, boolean animate) {
-        if (pile == null || pile.getLogicalPile() == null) {
-            Log.e("CardView", "Snap failed: Target pile or its logic is null.");
+        if (pile == null || pile.getLogicalPile() == null || card == null) {
+            Log.e("CardView", "Snap failed: Target pile, its logic, or card is null.");
             if (currentPile != null) snapToPile(currentPile, true); // Fallback
             return;
         }
@@ -141,7 +242,8 @@ public class CardView extends View {
 
         // Animate to final position
         float stackOffset = pile.getHeight() * 0.28f * (pile.getLogicalPile().getCards().size() - 1);
-        float targetX = pile.getX();
+        // Center the card horizontally within the pile to avoid misalignment
+        float targetX = pile.getX() + (pile.getWidth() - getWidth()) / 2f;
         float targetY = pile.getY() + stackOffset;
 
         if (animate) {

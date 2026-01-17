@@ -7,6 +7,7 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
+import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,10 +44,17 @@ public class PileView extends FrameLayout {
     }
 
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
-        rect.set(0, 0, getWidth(), getHeight());
-        canvas.drawRoundRect(rect, 16f, 16f, paint);
+        float w = getWidth();
+        float h = getHeight();
+
+        // Draw the border inset so stroke is fully inside bounds
+        float stroke = paint.getStrokeWidth();
+        float half = stroke / 2f;
+        rect.set(half, half, w - half, h - half);
+        float radius = 16f;
+        canvas.drawRoundRect(rect, radius, radius, paint);
     }
 
     // --- CARDVIEW MANAGEMENT ---
@@ -62,6 +70,7 @@ public class PileView extends FrameLayout {
         cardView.setCurrentPile(null);
     }
 
+    @SuppressWarnings("unused")
     public List<CardView> getCardViews() {
         return cardViews;
     }
