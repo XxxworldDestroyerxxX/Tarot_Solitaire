@@ -28,11 +28,13 @@ public class GamePage extends AppCompatActivity {
         leftPileViews.add(findViewById(R.id.playPile2));
         leftPileViews.add(findViewById(R.id.playPile3));
         leftPileViews.add(findViewById(R.id.playPile4));
-        leftPileViews.add(findViewById(R.id.playPile5_empty));
-        leftPileViews.add(findViewById(R.id.playPile6));
+        leftPileViews.add(findViewById(R.id.playPile5));
+        leftPileViews.add(findViewById(R.id.playPile6_empty));
         leftPileViews.add(findViewById(R.id.playPile7));
         leftPileViews.add(findViewById(R.id.playPile8));
         leftPileViews.add(findViewById(R.id.playPile9));
+        leftPileViews.add(findViewById(R.id.playPile10));
+        leftPileViews.add(findViewById(R.id.playPile11));
 
         rightPileViews.add(findViewById(R.id.organizePile1));
         rightPileViews.add(findViewById(R.id.organizePile2));
@@ -71,13 +73,35 @@ public class GamePage extends AppCompatActivity {
 
             // Safety: if too many piles won't fit, scale down slightly (rare)
             int totalPlayPiles = leftPileViews.size();
-            int spacing = (int) (pileWidth * 0.2f);
-            long neededWidth = (long) totalPlayPiles * pileWidth + (totalPlayPiles - 1) * spacing + getResources().getDimensionPixelSize(R.dimen.margin_play_area_horizontal);
-            if (neededWidth > rootW) {
-                pileWidth = Math.max(36, (int) ((rootW - getResources().getDimensionPixelSize(R.dimen.margin_play_area_horizontal)) / (float) totalPlayPiles));
-                pileHeight = (int) (pileWidth * (getResources().getDimensionPixelSize(R.dimen.pile_height) / (float) getResources().getDimensionPixelSize(R.dimen.pile_width)));
+            // Spacing factor between piles (lower value keeps piles tighter)
+            float spacingFactor = 0.12f; // reduced from 0.2 to pack 11 piles more reliably
+            int spacing = (int) (pileWidth * spacingFactor);
 
-                // Apply scaled sizes if needed
+            // Compute how much horizontal space we can use for the play area.
+            // Prefer measuring the actual width used by the organize area (right piles) after layout.
+            int reserveLeft = getResources().getDimensionPixelSize(R.dimen.margin_play_area_horizontal);
+            int measuredOrganizeWidth = 0;
+            for (PileView pv : rightPileViews) {
+                if (pv != null) {
+                    int w = pv.getWidth();
+                    if (w > 0) measuredOrganizeWidth = Math.max(measuredOrganizeWidth, w);
+                }
+            }
+            int reserveRight = measuredOrganizeWidth > 0 ? measuredOrganizeWidth + 16 : getResources().getDimensionPixelSize(R.dimen.margin_organize_area);
+            int availableWidth = rootW - reserveRight - reserveLeft;
+
+            long neededWidth = (long) totalPlayPiles * pileWidth + (totalPlayPiles - 1) * spacing;
+            if (neededWidth > availableWidth && availableWidth > 0) {
+                // Fit the piles into availableWidth while leaving spacing between them.
+                int totalSpacing = (totalPlayPiles - 1) * spacing;
+                int maxPileWidth = Math.max(36, (availableWidth - totalSpacing) / Math.max(1, totalPlayPiles));
+                pileWidth = maxPileWidth;
+                // Preserve original aspect ratio defined in dimens
+                int origPileW = getResources().getDimensionPixelSize(R.dimen.pile_width);
+                int origPileH = getResources().getDimensionPixelSize(R.dimen.pile_height);
+                pileHeight = (int) (pileWidth * (origPileH / (float) origPileW));
+
+                // Apply scaled sizes to ONLY the play piles (left area) and organize piles too so they match visually
                 for (PileView pv : allPiles) {
                     if (pv == null) continue;
                     if (pv.getLayoutParams() instanceof ConstraintLayout.LayoutParams) {
@@ -93,14 +117,17 @@ public class GamePage extends AppCompatActivity {
             Deck deck = new Deck();
             deck.shuffle();
 
-            int cardWidth = getResources().getDimensionPixelSize(R.dimen.card_width);
-            int cardHeight = getResources().getDimensionPixelSize(R.dimen.card_height);
+            // Ensure cards match pile size so they align perfectly. Use resource dims unless we scaled above.
+            int cardWidth = pileWidth;
+            int cardHeight = pileHeight;
 
-            // Deal cards across left piles (skipping the empty pile at index 4)
+            // Deal cards across left piles (skip the 6th pile which should be empty)
             int pileIndex = 0;
+            int totalLeft = leftPileViews.size();
             for (Card card : deck.getCards()) {
-                if (pileIndex == 4) { // Skip 5th pile (index 4)
-                    pileIndex = (pileIndex + 1) % leftPileViews.size();
+                // If current index would be the middle empty pile (index 5), skip it
+                if (pileIndex == 5) {
+                    pileIndex = (pileIndex + 1) % totalLeft;
                 }
 
                 PileView targetPileView = leftPileViews.get(pileIndex);
@@ -115,7 +142,7 @@ public class GamePage extends AppCompatActivity {
                 // Use post() on the cardView to ensure it's measured before its initial snap.
                 cardView.post(() -> cardView.snapToPile(targetPileView, false));
 
-                pileIndex = (pileIndex + 1) % leftPileViews.size();
+                pileIndex = (pileIndex + 1) % totalLeft;
             }
         });
     }
