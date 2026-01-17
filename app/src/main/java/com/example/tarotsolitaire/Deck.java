@@ -10,12 +10,10 @@ public class Deck {
     private final List<Card> cards = new ArrayList<>();
 
     public Deck() {
-        // Add standard cards (optionally skipping aces as per existing code)
+        // Add standard cards (exclude Aces explicitly by starting at rank 2)
         for (Card.Suit suit : Card.Suit.values()) {
-            for (int rank = 1; rank <= 13; rank++) {
-                if (rank != 1) { // existing rule: skip Ace if intended
-                    cards.add(new Card(suit, rank));
-                }
+            for (int rank = 2; rank <= 13; rank++) {
+                cards.add(new Card(suit, rank));
             }
         }
 
@@ -27,17 +25,6 @@ public class Deck {
 
     public void shuffle() {
         Collections.shuffle(cards);
-    }
-
-    @SuppressWarnings("unused")
-    public boolean isEmpty() {
-        return cards.isEmpty();
-    }
-
-    @SuppressWarnings("unused")
-    public Card drawCard() {
-        if (cards.isEmpty()) return null;
-        return cards.remove(cards.size() - 1);
     }
 
     public List<Card> getCards() {

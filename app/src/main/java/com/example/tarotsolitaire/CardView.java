@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.util.Log;
@@ -26,9 +27,10 @@ public class CardView extends View {
     private RectF rect;
     private Paint textPaint;
 
-    // Preallocated paints for tarot icon to avoid allocations in onDraw
+    // Preallocated paints for tarot icon and top-left label to avoid allocations in onDraw
     private Paint iconPaint;
     private Paint iconTextPaint;
+    private Paint labelPaint; // bold top-left number indicator
 
     // Standard constructors so tools/layout inflation won't warn
     public CardView(Context context) {
@@ -61,8 +63,14 @@ public class CardView extends View {
         iconTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         iconTextPaint.setColor(Color.WHITE);
         iconTextPaint.setTextAlign(Paint.Align.CENTER);
+
+        labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        labelPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        labelPaint.setTextAlign(Paint.Align.LEFT);
+        labelPaint.setColor(Color.BLACK);
     }
 
+    @SuppressWarnings("unused")
     public Card getCard() {
         return this.card;
     }
@@ -78,6 +86,12 @@ public class CardView extends View {
         float radius = 16f;
         float stroke = 4f;
 
+        // Compute top-left label position and size
+        float labelX = getWidth() * 0.10f;
+        float labelYBase = getHeight() * 0.18f; // baseline approx for top-left label
+        float labelSize = Math.max(16f, Math.min(36f, getHeight() * 0.22f));
+        labelPaint.setTextSize(labelSize);
+
         if (card != null && card.getType() == Card.Type.TAROT) {
             // Tarot cards: black background, gold border, white centered number and a small gold icon
             paint.setStyle(Paint.Style.FILL);
@@ -90,25 +104,29 @@ public class CardView extends View {
             paint.setStrokeWidth(6f); // thicker border for tarot
             canvas.drawRoundRect(rect, radius, radius, paint);
 
-            // Centered white text for tarot number
+            // Top-left number indicator (white, bold)
+            labelPaint.setColor(Color.WHITE);
+            float labelAscent = labelPaint.getFontMetrics().ascent;
+            canvas.drawText(card.getRankString(), labelX, labelYBase - labelAscent / 2f, labelPaint);
+
+            // Centered white number (smaller than before) optional: we keep the centered main number but slightly smaller
             textPaint.setColor(Color.WHITE);
-            float textSize = Math.max(14f, Math.min(40f, getHeight() * 0.32f));
-            textPaint.setTextSize(textSize);
+            float centerTextSize = Math.max(12f, Math.min(36f, getHeight() * 0.28f));
+            textPaint.setTextSize(centerTextSize);
             textPaint.setTextAlign(Paint.Align.CENTER);
-            float x = getWidth() / 2f;
+            float cx = getWidth() / 2f;
             Paint.FontMetrics fm = textPaint.getFontMetrics();
-            float y = getHeight() / 2f - (fm.ascent + fm.descent) / 2f;
-            canvas.drawText(card.getRankString(), x, y, textPaint);
+            float cy = getHeight() / 2f - (fm.ascent + fm.descent) / 2f;
+            canvas.drawText(card.getRankString(), cx, cy, textPaint);
 
             // Draw small gold circular icon at top-right using preallocated paint
-            float iconRadius = Math.max(8f, getWidth() * 0.12f);
+            float iconRadius = Math.max(8f, getWidth() * 0.10f);
             float iconCx = getWidth() - iconRadius - 6f;
             float iconCy = iconRadius + 6f;
             canvas.drawCircle(iconCx, iconCy, iconRadius, iconPaint);
 
             // White 'T' inside icon
-            float iconTextSize = iconRadius * 1.1f;
-            iconTextPaint.setTextSize(iconTextSize);
+            iconTextPaint.setTextSize(iconRadius);
             Paint.FontMetrics ifm = iconTextPaint.getFontMetrics();
             float iy = iconCy - (ifm.ascent + ifm.descent) / 2f;
             canvas.drawText("T", iconCx, iy, iconTextPaint);
@@ -124,8 +142,7 @@ public class CardView extends View {
             paint.setStrokeWidth(stroke);
             canvas.drawRoundRect(rect, radius, radius, paint);
 
-            // Larger colored text for standard cards
-            // Color mapping by suit
+            // Color mapping by suit for label and suit symbol
             int suitColor = Color.BLACK;
             switch (card.getSuit()) {
                 case HEARTS:
@@ -142,20 +159,18 @@ public class CardView extends View {
                     break;
             }
 
-            // Rank text (bigger)
-            textPaint.setTextAlign(Paint.Align.LEFT);
-            textPaint.setColor(suitColor);
-            float rankTextSize = Math.max(18f, Math.min(36f, getHeight() * 0.36f));
-            textPaint.setTextSize(rankTextSize);
-            float rx = getWidth() * 0.12f;
-            Paint.FontMetrics rfm = textPaint.getFontMetrics();
-            float ry = getHeight() * 0.32f - (rfm.ascent + rfm.descent) / 2f;
-            canvas.drawText(card.getRankString(), rx, ry, textPaint);
+            // Top-left number indicator (bold, colored by suit)
+            labelPaint.setColor(suitColor);
+            canvas.drawText(card.getRankString(), labelX, labelYBase - labelPaint.getFontMetrics().ascent / 2f, labelPaint);
 
-            // Suit symbol (slightly smaller)
-            textPaint.setTextSize(Math.max(14f, rankTextSize * 0.8f));
-            float sy = getHeight() * 0.62f - (rfm.ascent + rfm.descent) / 2f;
-            canvas.drawText(card.getSuitSymbol(), rx, sy, textPaint);
+            // Suit symbol below the label
+            float suitSize = Math.max(12f, labelSize * 0.7f);
+            textPaint.setTextSize(suitSize);
+            textPaint.setColor(suitColor);
+            textPaint.setTextAlign(Paint.Align.LEFT);
+            float suitY = getHeight() * 0.42f - (textPaint.getFontMetrics().ascent + textPaint.getFontMetrics().descent) / 2f;
+            canvas.drawText(card.getSuitSymbol(), labelX, suitY, textPaint);
+
         } else {
             // Preview or placeholder - draw blank card outline
             paint.setStyle(Paint.Style.STROKE);
