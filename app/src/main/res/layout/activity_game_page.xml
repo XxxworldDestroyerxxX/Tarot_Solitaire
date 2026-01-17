@@ -30,6 +30,17 @@
         app:layout_constraintTop_toTopOf="@id/organizePile1"
         app:layout_constraintBottom_toBottomOf="@id/organizePile1" />
 
+    <!-- Invisible storage slot centered between the four suit piles -->
+    <com.example.tarotsolitaire.PileView
+        android:id="@+id/organizeStore"
+        android:layout_width="@dimen/pile_width"
+        android:layout_height="@dimen/pile_height"
+        android:visibility="visible"
+        app:layout_constraintStart_toEndOf="@id/organizePile1"
+        app:layout_constraintEnd_toStartOf="@id/organizePile2"
+        app:layout_constraintTop_toBottomOf="@id/organizePile1"
+        app:layout_constraintBottom_toTopOf="@id/organizePile3" />
+
     <com.example.tarotsolitaire.PileView
         android:id="@+id/organizePile3"
         android:layout_width="@dimen/pile_width"

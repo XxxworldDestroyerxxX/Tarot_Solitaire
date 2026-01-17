@@ -23,6 +23,8 @@ public class PileView extends FrameLayout {
     private String labelText = null;
     private final Paint labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
+    private boolean showLock = false; // whether to draw a small lock icon
+
     public PileView(Context context, AttributeSet attrs) {
         super(context, attrs);
         setWillNotDraw(false); // Enable onDraw for this layout
@@ -58,6 +60,11 @@ public class PileView extends FrameLayout {
         invalidate();
     }
 
+    public void setShowLock(boolean show) {
+        this.showLock = show;
+        invalidate();
+    }
+
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
@@ -80,6 +87,17 @@ public class PileView extends FrameLayout {
             float x = w / 2f;
             float y = labelSize + 6f; // simple padding from top
             canvas.drawText(labelText, x, y, labelPaint);
+        }
+
+        // Draw lock icon top-right if requested
+        if (showLock) {
+            float lockSize = Math.max(12f, h * 0.10f);
+            labelPaint.setTextSize(lockSize);
+            labelPaint.setTextAlign(Paint.Align.RIGHT);
+            float lx = w - lockSize / 2f - 6f;
+            float ly = lockSize + 6f;
+            canvas.drawText(getContext().getString(R.string.lock_icon), lx, ly, labelPaint);
+            labelPaint.setTextAlign(Paint.Align.CENTER);
         }
     }
 

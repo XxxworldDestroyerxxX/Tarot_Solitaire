@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">Tarot Solitaire</string>
+    <string name="store_label">Store</string>
+    <string name="you_win">win</string>
+    <string name="you_win_time">win %1$s</string>
+    <string name="label_hearts">♥: 2→</string>
+    <string name="label_diamonds">♦: 2→</string>
+    <string name="label_clubs">♣: 2→</string>
+    <string name="label_spades">♠: 2→</string>
+    <string name="label_tarot_asc">T: 0→</string>
+    <string name="label_tarot_desc">T: 21←</string>
+    <string name="lock_icon">🔒</string>
+    <string name="restart">Restart</string>
 </resources>

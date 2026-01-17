@@ -8,8 +8,13 @@ import android.view.View;
 import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import android.util.Log;
+import android.widget.FrameLayout;
 
 public class GamePage extends AppCompatActivity {
+
+    private static final String TAG = "GamePage";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +49,8 @@ public class GamePage extends AppCompatActivity {
         rightPileViews.add(findViewById(R.id.organizePile4));
         rightPileViews.add(findViewById(R.id.organizePile5));
         rightPileViews.add(findViewById(R.id.organizePile6));
+        // Optional storage slot between suit piles
+        PileView organizeStoreView = findViewById(R.id.organizeStore);
 
         // --- 2. CREATE AND LINK THE LOGIC ---
         // This part is the same: we give each PileView its logical "brain".
@@ -58,7 +65,7 @@ public class GamePage extends AppCompatActivity {
 
             // Map the first four organize piles to suits. Assumption (change if needed):
             // index 0 -> HEARTS, 1 -> DIAMONDS, 2 -> CLUBS, 3 -> SPADES
-            if (i >= 0 && i <= 3) {
+            if (i <= 3) {
                 final Card.Suit expectedSuit;
                 switch (i) {
                     case 0: expectedSuit = Card.Suit.HEARTS; break;
@@ -69,6 +76,8 @@ public class GamePage extends AppCompatActivity {
 
                 SpecialPile.PlacementRule suitRule = (pile, card) -> {
                     if (card == null) return false;
+                    // If the storage pile currently holds a card, suit piles are disabled
+                    if (organizeStoreView != null && organizeStoreView.getLogicalPile() != null && !organizeStoreView.getLogicalPile().isEmpty()) return false;
                     if (card.getType() != Card.Type.STANDARD) return false; // only standard cards
                     if (card.getSuit() != expectedSuit) return false; // must match suit
                     // On empty pile only a '2' can be placed
@@ -113,56 +122,209 @@ public class GamePage extends AppCompatActivity {
         }
 
         // Add visual labels to the organize piles to show their rule (suit or tarot start)
-        if (rightPileViews.size() >= 6) {
-            rightPileViews.get(0).setLabel("♥: 2→");
-            rightPileViews.get(1).setLabel("♦: 2→");
-            rightPileViews.get(2).setLabel("♣: 2→");
-            rightPileViews.get(3).setLabel("♠: 2→");
-            rightPileViews.get(4).setLabel("T: 0→");
-            rightPileViews.get(5).setLabel("T: 21←");
+         if (rightPileViews.size() >= 6) {
+             rightPileViews.get(0).setLabel(getString(R.string.label_hearts));
+             rightPileViews.get(1).setLabel(getString(R.string.label_diamonds));
+             rightPileViews.get(2).setLabel(getString(R.string.label_clubs));
+             rightPileViews.get(3).setLabel(getString(R.string.label_spades));
+             rightPileViews.get(4).setLabel(getString(R.string.label_tarot_asc));
+             rightPileViews.get(5).setLabel(getString(R.string.label_tarot_desc));
+         }
+        // If there is an organizeStore, give it a small label (hidden since view is invisible) and set logic
+        if (organizeStoreView != null) {
+            organizeStoreView.setLabel(getString(R.string.store_label));
+            organizeStoreView.setShowLock(true);
+            // Storage pile accepts any single card only.
+            SpecialPile.PlacementRule storeRule = (pile, card) -> {
+                if (card == null) return false;
+                // allow if pile is empty (store only one card)
+                return pile.isEmpty();
+            };
+            SpecialPile storePile = new SpecialPile(storeRule);
+            organizeStoreView.setLogicalPile(storePile);
         }
 
-        // Simple win overlay (hidden initially)
-        final View winOverlay = new View(this);
-        winOverlay.setBackgroundColor(0xAA000000); // translucent black
-        ConstraintLayout.LayoutParams overlayParams = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.MATCH_PARENT);
-        winOverlay.setLayoutParams(overlayParams);
-        winOverlay.setVisibility(View.GONE);
-        root.addView(winOverlay);
+        // Create win overlay and controls overlay placeholders (we'll initialize actual views once)
+        final View[] winOverlayHolder = new View[1];
+        final TextView[] winTextHolder = new TextView[1];
+        final FrameLayout[] controlsOverlayHolder = new FrameLayout[1];
+        final android.widget.Button[] restartBtnHolder = new android.widget.Button[1];
 
-        final TextView winText = new TextView(this);
-        winText.setText("You win!");
-        winText.setTextColor(android.graphics.Color.WHITE);
-        winText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 32);
-        winText.setVisibility(View.GONE);
-        ConstraintLayout.LayoutParams wtParams = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT, ConstraintLayout.LayoutParams.WRAP_CONTENT);
-        wtParams.leftToLeft = ConstraintLayout.LayoutParams.PARENT_ID;
-        wtParams.rightToRight = ConstraintLayout.LayoutParams.PARENT_ID;
-        wtParams.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
-        wtParams.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
-        winText.setLayoutParams(wtParams);
-        root.addView(winText);
+        // Initialize win overlay and controls overlay (store into holders so other code can reference them)
+        View winOverlayView = new View(this);
+        winOverlayView.setBackgroundColor(0xAA000000); // translucent black
+        ConstraintLayout.LayoutParams winOverlayLp = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.MATCH_PARENT);
+        winOverlayView.setLayoutParams(winOverlayLp);
+        winOverlayView.setVisibility(View.GONE);
+        root.addView(winOverlayView);
+        winOverlayHolder[0] = winOverlayView;
+
+        TextView winTextView = new TextView(this);
+        winTextView.setId(View.generateViewId());
+        winTextView.setText(getString(R.string.you_win));
+        winTextView.setTextColor(android.graphics.Color.WHITE);
+        winTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 32);
+        winTextView.setVisibility(View.GONE);
+        ConstraintLayout.LayoutParams wtLp = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT, ConstraintLayout.LayoutParams.WRAP_CONTENT);
+        wtLp.leftToLeft = ConstraintLayout.LayoutParams.PARENT_ID;
+        wtLp.rightToRight = ConstraintLayout.LayoutParams.PARENT_ID;
+        wtLp.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
+        wtLp.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
+        winTextView.setLayoutParams(wtLp);
+        root.addView(winTextView);
+        winTextHolder[0] = winTextView;
+
+        // Controls overlay with persistent restart button (bottom-left)
+        android.widget.Button restartBtn = new android.widget.Button(this);
+        restartBtn.setText(getString(R.string.restart));
+        restartBtn.setVisibility(View.VISIBLE);
+        ConstraintLayout.LayoutParams rbLp = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT, ConstraintLayout.LayoutParams.WRAP_CONTENT);
+        rbLp.leftToLeft = ConstraintLayout.LayoutParams.PARENT_ID;
+        rbLp.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
+        rbLp.leftMargin = (int) (8 * getResources().getDisplayMetrics().density);
+        rbLp.bottomMargin = (int) (8 * getResources().getDisplayMetrics().density);
+        restartBtn.setLayoutParams(rbLp);
+
+        FrameLayout controlsOverlay = new FrameLayout(this);
+        ConstraintLayout.LayoutParams coLp = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.MATCH_PARENT);
+        controlsOverlay.setLayoutParams(coLp);
+        controlsOverlay.setClickable(false);
+        controlsOverlay.addView(restartBtn);
+        root.addView(controlsOverlay);
+        controlsOverlayHolder[0] = controlsOverlay;
+        restartBtnHolder[0] = restartBtn;
+
+        // Timer start timestamp container
+        final long[] startTime = new long[1];
 
         // Helper to check win: all cards moved from play piles into organize piles
-        Runnable checkWin = () -> {
-            int totalCardsInPlay = 0;
-            for (PileView pv : leftPileViews) {
-                if (pv == null || pv.getLogicalPile() == null) continue;
-                totalCardsInPlay += pv.getLogicalPile().getCards().size();
-            }
-            // Total cards in game: deck size without aces + tarot = left piles + right piles
-            int totalLeft = 0;
-            for (PileView pv : leftPileViews) {
-                if (pv == null || pv.getLogicalPile() == null) continue;
-                totalLeft += pv.getLogicalPile().getCards().size();
-            }
-            int totalRight = 0;
-            for (PileView pv : rightPileViews) {
-                if (pv == null || pv.getLogicalPile() == null) continue;
-                totalRight += pv.getLogicalPile().getCards().size();
-            }
-            int totalInGame = totalLeft + totalRight;
+        final Runnable[] checkWinHolder = new Runnable[1];
 
+        // We'll assign checkWinHolder[0] below, but declare it before dealAndStart so listeners can reference it
+
+         // Helper to clear all card views and logical piles
+         Runnable clearAll = () -> {
+             Log.d(TAG, "clearAll: starting to remove card views and clear piles");
+             // Remove all CardView children from root and clear references in pile views and logical piles
+             // 1) Remove CardViews from root
+             for (int i = root.getChildCount() - 1; i >= 0; i--) {
+                 android.view.View v = root.getChildAt(i);
+                 if (v instanceof CardView) {
+                     root.removeViewAt(i);
+                 }
+             }
+
+             // 2) Clear UI references from pile views
+             for (PileView pv : allPiles) {
+                 if (pv == null) continue;
+                 List<CardView> cvs = new java.util.ArrayList<>(pv.getCardViews());
+                 for (CardView cv : cvs) {
+                     pv.removeCardView(cv);
+                 }
+             }
+
+             // 3) Clear logical piles
+             for (PileView pv : allPiles) {
+                 if (pv == null) continue;
+                 Pile logic = pv.getLogicalPile();
+                 if (logic == null) continue;
+                 java.util.List<Card> cards = new java.util.ArrayList<>(logic.getCards());
+                 for (Card c : cards) {
+                     logic.removeCard(c);
+                 }
+             }
+             Log.d(TAG, "clearAll: finished clearing piles and views");
+         };
+
+         // Deal function (clears then deals and starts timer)
+         Runnable dealAndStart = () -> {
+             Log.d(TAG, "dealAndStart: starting deal");
+             // hide win UI if shown
+             winOverlayHolder[0].setVisibility(View.GONE);
+             winTextHolder[0].setVisibility(View.GONE);
+
+             // Clear existing
+             clearAll.run();
+
+             // Now recompute pile sizes if needed (reuse existing logic minimal)
+             int pileWidth = getResources().getDimensionPixelSize(R.dimen.pile_width);
+             int pileHeight = getResources().getDimensionPixelSize(R.dimen.pile_height);
+             if (!allPiles.isEmpty() && allPiles.get(0) != null) {
+                 int w = allPiles.get(0).getWidth();
+                 int h = allPiles.get(0).getHeight();
+                 if (w > 0) pileWidth = w;
+                 if (h > 0) pileHeight = h;
+             }
+
+             // Build deck and create card views
+             Deck deck = new Deck();
+             deck.shuffle();
+
+             int cardWidth = pileWidth;
+             int cardHeight = pileHeight;
+
+             int pileIndex = 0;
+             int totalLeft = leftPileViews.size();
+             for (Card card : deck.getCards()) {
+                 if (pileIndex == 5) pileIndex = (pileIndex + 1) % totalLeft;
+                 PileView targetPileView = leftPileViews.get(pileIndex);
+
+                 CardView cardView = new CardView(this);
+                 cardView.setAllPiles(allPiles);
+                 cardView.setCard(card);
+                 cardView.setOnPlacedListener((placedCard, placedPile) -> runOnUiThread(checkWinHolder[0]));
+                 ConstraintLayout.LayoutParams cardParams = new ConstraintLayout.LayoutParams(cardWidth, cardHeight);
+                 root.addView(cardView, cardParams);
+                 Log.d(TAG, "dealAndStart: added CardView for " + card + " to root");
+                 // Capture values for lambda (pileIndex is mutated each iteration)
+                 final int curIndex = pileIndex;
+                 final Card curCard = card;
+                 final PileView target = targetPileView;
+                 cardView.post(() -> {
+                     cardView.snapToPile(target, false);
+                     Log.d(TAG, "dealAndStart: snapped CardView for " + curCard + " to pile index " + curIndex);
+                 });
+
+                 pileIndex = (pileIndex + 1) % totalLeft;
+             }
+
+             // Start timer
+             startTime[0] = System.currentTimeMillis();
+             Log.d(TAG, "dealAndStart: timer started at " + startTime[0]);
+             Log.d(TAG, "dealAndStart: finished dealing");
+             // Ensure the restart button is above newly added CardViews
+             runOnUiThread(() -> {
+                 try {
+                     controlsOverlayHolder[0].bringToFront();
+                     restartBtnHolder[0].bringToFront();
+                     restartBtnHolder[0].setElevation(20f);
+                     restartBtnHolder[0].setTranslationZ(20f);
+                     controlsOverlayHolder[0].invalidate();
+                     restartBtnHolder[0].invalidate();
+                     Log.d(TAG, "dealAndStart: controlsOverlay and restartBtn brought to front after deal");
+                 } catch (Exception e) {
+                     Log.e(TAG, "Error bringing restartBtn to front", e);
+                 }
+             });
+         };
+
+        // Now that dealAndStart is defined, wire the restart button to it.
+        // Wire restart button to the dealAndStart Runnable
+        restartBtnHolder[0].setOnClickListener(v -> {
+            Log.d(TAG, "Restart button clicked (final wiring)");
+            android.widget.Toast.makeText(this, "Restarting...", android.widget.Toast.LENGTH_SHORT).show();
+            runOnUiThread(() -> {
+                try {
+                    dealAndStart.run();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error while running dealAndStart from restart click", e);
+                    android.widget.Toast.makeText(this, "Restart failed: " + e.getMessage(), android.widget.Toast.LENGTH_LONG).show();
+                }
+            });
+        });
+
+         // Now define the checkWin runnable and store it in the holder so listeners can call it
+         checkWinHolder[0] = () -> {
             // Win if no cards remain in play area (all are in right piles)
             boolean won = true;
             for (PileView pv : leftPileViews) {
@@ -170,103 +332,33 @@ public class GamePage extends AppCompatActivity {
                 if (!pv.getLogicalPile().isEmpty()) { won = false; break; }
             }
             if (won) {
-                winOverlay.setVisibility(View.VISIBLE);
-                winText.setVisibility(View.VISIBLE);
+                // compute elapsed time
+                long elapsed = startTime[0] > 0 ? (System.currentTimeMillis() - startTime[0]) : 0;
+                String timeStr = formatElapsed(elapsed);
+                winTextHolder[0].setText(getString(R.string.you_win_time, timeStr));
+                winOverlayHolder[0].setVisibility(View.VISIBLE);
+                winTextHolder[0].setVisibility(View.VISIBLE);
+                Log.d(TAG, "checkWin: player won in " + timeStr + " (ms=" + elapsed + ")");
             }
         };
 
         // --- Create the master list of all UI piles ---
         allPiles.addAll(leftPileViews);
+        // include the optional storage pile as a drop target
+        if (organizeStoreView != null) {
+            allPiles.add(organizeStoreView);
+        }
         allPiles.addAll(rightPileViews);
 
-
-        // --- 3. DEAL THE CARDS ---
-        // We use post() to ensure the XML layout has been fully measured before we deal.
-        // This guarantees that getWidth() and getHeight() will return correct values.
-        root.post(() -> {
-            // Compute responsive sizes based on the measured root view.
-            int rootW = root.getWidth();
-            int rootH = root.getHeight();
-
-            // Read base sizes directly from resources (pixel sizes)
-            int pileWidth = getResources().getDimensionPixelSize(R.dimen.pile_width);
-            int pileHeight = getResources().getDimensionPixelSize(R.dimen.pile_height);
-
-            // Safety: if too many piles won't fit, scale down slightly (rare)
-            int totalPlayPiles = leftPileViews.size();
-            // Spacing factor between piles (lower value keeps piles tighter)
-            float spacingFactor = 0.12f; // reduced from 0.2 to pack 11 piles more reliably
-            int spacing = (int) (pileWidth * spacingFactor);
-
-            // Compute how much horizontal space we can use for the play area.
-            // Prefer measuring the actual width used by the organize area (right piles) after layout.
-            int reserveLeft = getResources().getDimensionPixelSize(R.dimen.margin_play_area_horizontal);
-            int measuredOrganizeWidth = 0;
-            for (PileView pv : rightPileViews) {
-                if (pv != null) {
-                    int w = pv.getWidth();
-                    if (w > 0) measuredOrganizeWidth = Math.max(measuredOrganizeWidth, w);
-                }
-            }
-            int reserveRight = measuredOrganizeWidth > 0 ? measuredOrganizeWidth + 16 : getResources().getDimensionPixelSize(R.dimen.margin_organize_area);
-            int availableWidth = rootW - reserveRight - reserveLeft;
-
-            long neededWidth = (long) totalPlayPiles * pileWidth + (totalPlayPiles - 1) * spacing;
-            if (neededWidth > availableWidth && availableWidth > 0) {
-                // Fit the piles into availableWidth while leaving spacing between them.
-                int totalSpacing = (totalPlayPiles - 1) * spacing;
-                int maxPileWidth = Math.max(36, (availableWidth - totalSpacing) / Math.max(1, totalPlayPiles));
-                pileWidth = maxPileWidth;
-                // Preserve original aspect ratio defined in dimens
-                int origPileW = getResources().getDimensionPixelSize(R.dimen.pile_width);
-                int origPileH = getResources().getDimensionPixelSize(R.dimen.pile_height);
-                pileHeight = (int) (pileWidth * (origPileH / (float) origPileW));
-
-                // Apply scaled sizes to ONLY the play piles (left area) and organize piles too so they match visually
-                for (PileView pv : allPiles) {
-                    if (pv == null) continue;
-                    if (pv.getLayoutParams() instanceof ConstraintLayout.LayoutParams) {
-                        ConstraintLayout.LayoutParams lp = (ConstraintLayout.LayoutParams) pv.getLayoutParams();
-                        lp.width = pileWidth;
-                        lp.height = pileHeight;
-                        pv.setLayoutParams(lp);
-                    }
-                }
-            }
-
-            // Build deck and deal, using card dims from resources
-            Deck deck = new Deck();
-            deck.shuffle();
-
-            // Ensure cards match pile size so they align perfectly. Use resource dims unless we scaled above.
-            int cardWidth = pileWidth;
-            int cardHeight = pileHeight;
-
-            // Deal cards across left piles (skip the 6th pile which should be empty)
-            int pileIndex = 0;
-            int totalLeft = leftPileViews.size();
-            for (Card card : deck.getCards()) {
-                // If current index would be the middle empty pile (index 5), skip it
-                if (pileIndex == 5) {
-                    pileIndex = (pileIndex + 1) % totalLeft;
-                }
-
-                PileView targetPileView = leftPileViews.get(pileIndex);
-
-                CardView cardView = new CardView(this);
-                cardView.setAllPiles(allPiles);
-                cardView.setCard(card);
-                // Listen for placements to check win condition
-                cardView.setOnPlacedListener((placedCard, placedPile) -> runOnUiThread(checkWin));
-                ConstraintLayout.LayoutParams cardParams = new ConstraintLayout.LayoutParams(cardWidth, cardHeight);
-                // Keep card params unconstrained; snapToPile will place them
-                root.addView(cardView, cardParams);
-
-                // Use post() on the cardView to ensure it's measured before its initial snap.
-                cardView.post(() -> cardView.snapToPile(targetPileView, false));
-
-                pileIndex = (pileIndex + 1) % totalLeft;
-            }
-        });
+        // Initial deal
+        root.post(dealAndStart);
     }
-}
+
+    // Helper to format elapsed milliseconds as mm:ss
+    private static String formatElapsed(long ms) {
+        long totalSec = ms / 1000;
+        long mins = totalSec / 60;
+        long secs = totalSec % 60;
+        return String.format(Locale.US, "%d:%02d", mins, secs);
+    }
+ }
