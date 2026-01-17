@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.Locale;
 import android.util.Log;
 import android.widget.FrameLayout;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.Gravity;
 
 public class GamePage extends AppCompatActivity {
 
@@ -149,6 +152,11 @@ public class GamePage extends AppCompatActivity {
         final TextView[] winTextHolder = new TextView[1];
         final FrameLayout[] controlsOverlayHolder = new FrameLayout[1];
         final android.widget.Button[] restartBtnHolder = new android.widget.Button[1];
+        final TextView[] timerHolder = new TextView[1];
+
+        // Handler & runnable for live timer updates
+        final Handler timerHandler = new Handler(Looper.getMainLooper());
+        final Runnable[] timerRunnableHolder = new Runnable[1];
 
         // Initialize win overlay and controls overlay (store into holders so other code can reference them)
         View winOverlayView = new View(this);
@@ -174,22 +182,32 @@ public class GamePage extends AppCompatActivity {
         root.addView(winTextView);
         winTextHolder[0] = winTextView;
 
-        // Controls overlay with persistent restart button (bottom-left)
-        android.widget.Button restartBtn = new android.widget.Button(this);
-        restartBtn.setText(getString(R.string.restart));
-        restartBtn.setVisibility(View.VISIBLE);
-        ConstraintLayout.LayoutParams rbLp = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT, ConstraintLayout.LayoutParams.WRAP_CONTENT);
-        rbLp.leftToLeft = ConstraintLayout.LayoutParams.PARENT_ID;
-        rbLp.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
-        rbLp.leftMargin = (int) (8 * getResources().getDisplayMetrics().density);
-        rbLp.bottomMargin = (int) (8 * getResources().getDisplayMetrics().density);
-        restartBtn.setLayoutParams(rbLp);
-
+        // Controls overlay with persistent timer and restart button
         FrameLayout controlsOverlay = new FrameLayout(this);
         ConstraintLayout.LayoutParams coLp = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.MATCH_PARENT);
         controlsOverlay.setLayoutParams(coLp);
         controlsOverlay.setClickable(false);
-        controlsOverlay.addView(restartBtn);
+
+        // Timer TextView at bottom-left
+        TextView timerView = new TextView(this);
+        timerView.setText(getString(R.string.timer_initial));
+        timerView.setTextColor(android.graphics.Color.WHITE);
+        timerView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
+        FrameLayout.LayoutParams timerLp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM | Gravity.START);
+        int baseMargin = (int) (8 * getResources().getDisplayMetrics().density);
+        timerLp.setMargins(baseMargin, 0, 0, baseMargin);
+        controlsOverlay.addView(timerView, timerLp);
+        timerHolder[0] = timerView;
+
+        // Restart button placed to the right of timer
+        android.widget.Button restartBtn = new android.widget.Button(this);
+        restartBtn.setText(getString(R.string.restart));
+        restartBtn.setVisibility(View.VISIBLE);
+        // Place restart button at top-left
+        FrameLayout.LayoutParams restartLp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.START);
+        restartLp.setMargins(baseMargin, baseMargin, 0, 0);
+        controlsOverlay.addView(restartBtn, restartLp);
+
         root.addView(controlsOverlay);
         controlsOverlayHolder[0] = controlsOverlay;
         restartBtnHolder[0] = restartBtn;
@@ -292,6 +310,20 @@ public class GamePage extends AppCompatActivity {
              startTime[0] = System.currentTimeMillis();
              Log.d(TAG, "dealAndStart: timer started at " + startTime[0]);
              Log.d(TAG, "dealAndStart: finished dealing");
+             // Start live timer updates
+             timerHandler.removeCallbacksAndMessages(null);
+             timerRunnableHolder[0] = new Runnable() {
+                 @Override
+                 public void run() {
+                     if (startTime[0] > 0) {
+                         long elapsed = System.currentTimeMillis() - startTime[0];
+                         timerHolder[0].setText(formatElapsed(elapsed));
+                         timerHandler.postDelayed(this, 1000);
+                     }
+                 }
+             };
+             timerHandler.post(timerRunnableHolder[0]);
+
              // Ensure the restart button is above newly added CardViews
              runOnUiThread(() -> {
                  try {
@@ -312,16 +344,16 @@ public class GamePage extends AppCompatActivity {
         // Wire restart button to the dealAndStart Runnable
         restartBtnHolder[0].setOnClickListener(v -> {
             Log.d(TAG, "Restart button clicked (final wiring)");
-            android.widget.Toast.makeText(this, "Restarting...", android.widget.Toast.LENGTH_SHORT).show();
-            runOnUiThread(() -> {
-                try {
-                    dealAndStart.run();
-                } catch (Exception e) {
-                    Log.e(TAG, "Error while running dealAndStart from restart click", e);
-                    android.widget.Toast.makeText(this, "Restart failed: " + e.getMessage(), android.widget.Toast.LENGTH_LONG).show();
-                }
-            });
-        });
+            android.widget.Toast.makeText(this, getString(R.string.restarting_toast), android.widget.Toast.LENGTH_SHORT).show();
+             runOnUiThread(() -> {
+                 try {
+                     dealAndStart.run();
+                 } catch (Exception e) {
+                     Log.e(TAG, "Error while running dealAndStart from restart click", e);
+                     android.widget.Toast.makeText(this, "Restart failed: " + e.getMessage(), android.widget.Toast.LENGTH_LONG).show();
+                 }
+             });
+         });
 
          // Now define the checkWin runnable and store it in the holder so listeners can call it
          checkWinHolder[0] = () -> {
@@ -338,9 +370,13 @@ public class GamePage extends AppCompatActivity {
                 winTextHolder[0].setText(getString(R.string.you_win_time, timeStr));
                 winOverlayHolder[0].setVisibility(View.VISIBLE);
                 winTextHolder[0].setVisibility(View.VISIBLE);
-                Log.d(TAG, "checkWin: player won in " + timeStr + " (ms=" + elapsed + ")");
-            }
-        };
+                // Stop live timer updates on win
+                try {
+                    timerHandler.removeCallbacksAndMessages(null);
+                } catch (Exception ignored) {}
+                 Log.d(TAG, "checkWin: player won in " + timeStr + " (ms=" + elapsed + ")");
+             }
+         };
 
         // --- Create the master list of all UI piles ---
         allPiles.addAll(leftPileViews);
