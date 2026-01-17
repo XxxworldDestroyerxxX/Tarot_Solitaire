@@ -4,8 +4,8 @@ public class Card {
 
     public enum Suit { HEARTS, DIAMONDS, CLUBS, SPADES }
 
-    private Suit suit;
-    private int rank;        // 1 = Ace, 11 = Jack, etc.
+    private final Suit suit;
+    private final int rank;        // 1 = Ace, 11 = Jack, etc.
     private Pile currentPile; // logical pile this card belongs to
 
     public Card(Suit suit, int rank) {

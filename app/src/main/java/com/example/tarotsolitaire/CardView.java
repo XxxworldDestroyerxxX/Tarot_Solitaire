@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -32,6 +33,8 @@ public class CardView extends View {
         rect = new RectF();
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textPaint.setColor(Color.BLACK);
+        // Fixed text size ~14sp to mirror previous appearance
+        textPaint.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14, getResources().getDisplayMetrics()));
     }
 
     public Card getCard() {
@@ -42,11 +45,23 @@ public class CardView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         rect.set(0, 0, getWidth(), getHeight());
-        canvas.drawRoundRect(rect, 16f, 16f, paint);
 
-        textPaint.setTextSize(getHeight() * 0.2f);
-        canvas.drawText(card.getRankString(), getWidth() * 0.15f, getHeight() * 0.25f, textPaint);
-        canvas.drawText(card.getSuitSymbol(), getWidth() * 0.15f, getHeight() * 0.45f, textPaint);
+        // Reverted to simpler fixed visuals for consistent look
+        float radius = 16f;
+        float stroke = 4f;
+
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.WHITE);
+        canvas.drawRoundRect(rect, radius, radius, paint);
+
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setColor(Color.BLACK);
+        paint.setStrokeWidth(stroke);
+        canvas.drawRoundRect(rect, radius, radius, paint);
+
+        // Draw rank + suit in fixed-ish positions
+        canvas.drawText(card.getRankString(), getWidth() * 0.12f, getHeight() * 0.28f, textPaint);
+        canvas.drawText(card.getSuitSymbol(), getWidth() * 0.12f, getHeight() * 0.52f, textPaint);
     }
 
     @Override
@@ -85,7 +100,7 @@ public class CardView extends View {
             if (pileView != null && pileView.getLogicalPile() != null) {
                 if (pileView.getLogicalPile().canPlaceCard(this.card)) {
                     float pileTargetX = pileView.getX() + pileView.getWidth() / 2f;
-                    float stackOffset = pileView.getHeight() * 0.3f * pileView.getLogicalPile().getCards().size();
+                    float stackOffset = pileView.getHeight() * 0.28f * pileView.getLogicalPile().getCards().size();
                     float pileTargetY = pileView.getY() + stackOffset;
 
                     double distance = Math.sqrt(Math.pow(cardCenterX - pileTargetX, 2) + Math.pow(cardCenterY - pileTargetY, 2));
@@ -125,7 +140,7 @@ public class CardView extends View {
         pile.addCardView(this); // This calls setCurrentPile
 
         // Animate to final position
-        float stackOffset = pile.getHeight() * 0.3f * (pile.getLogicalPile().getCards().size() - 1);
+        float stackOffset = pile.getHeight() * 0.28f * (pile.getLogicalPile().getCards().size() - 1);
         float targetX = pile.getX();
         float targetY = pile.getY() + stackOffset;
 

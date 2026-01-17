@@ -3,6 +3,7 @@ package com.example.tarotsolitaire;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import android.util.TypedValue;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,14 +61,42 @@ public class GamePage extends AppCompatActivity {
         // We use post() to ensure the XML layout has been fully measured before we deal.
         // This guarantees that getWidth() and getHeight() will return correct values.
         root.post(() -> {
+            // Compute responsive sizes based on the measured root view.
+            int rootW = root.getWidth();
+            int rootH = root.getHeight();
+
+            // Read base sizes directly from resources (pixel sizes)
+            int pileWidth = getResources().getDimensionPixelSize(R.dimen.pile_width);
+            int pileHeight = getResources().getDimensionPixelSize(R.dimen.pile_height);
+
+            // Safety: if too many piles won't fit, scale down slightly (rare)
+            int totalPlayPiles = leftPileViews.size();
+            int spacing = (int) (pileWidth * 0.2f);
+            long neededWidth = (long) totalPlayPiles * pileWidth + (totalPlayPiles - 1) * spacing + getResources().getDimensionPixelSize(R.dimen.margin_play_area_horizontal);
+            if (neededWidth > rootW) {
+                pileWidth = Math.max(36, (int) ((rootW - getResources().getDimensionPixelSize(R.dimen.margin_play_area_horizontal)) / (float) totalPlayPiles));
+                pileHeight = (int) (pileWidth * (getResources().getDimensionPixelSize(R.dimen.pile_height) / (float) getResources().getDimensionPixelSize(R.dimen.pile_width)));
+
+                // Apply scaled sizes if needed
+                for (PileView pv : allPiles) {
+                    if (pv == null) continue;
+                    if (pv.getLayoutParams() instanceof ConstraintLayout.LayoutParams) {
+                        ConstraintLayout.LayoutParams lp = (ConstraintLayout.LayoutParams) pv.getLayoutParams();
+                        lp.width = pileWidth;
+                        lp.height = pileHeight;
+                        pv.setLayoutParams(lp);
+                    }
+                }
+            }
+
+            // Build deck and deal, using card dims from resources
             Deck deck = new Deck();
             deck.shuffle();
 
-            // Set the card size based on the size of a pile that now exists on screen.
-            // This is how the cards also become responsive!
-            int cardWidth = (int) getResources().getDimension(R.dimen.card_width);
-            int cardHeight = (int) getResources().getDimension(R.dimen.card_height);
+            int cardWidth = getResources().getDimensionPixelSize(R.dimen.card_width);
+            int cardHeight = getResources().getDimensionPixelSize(R.dimen.card_height);
 
+            // Deal cards across left piles (skipping the empty pile at index 4)
             int pileIndex = 0;
             for (Card card : deck.getCards()) {
                 if (pileIndex == 4) { // Skip 5th pile (index 4)
@@ -78,6 +107,7 @@ public class GamePage extends AppCompatActivity {
 
                 CardView cardView = new CardView(this, allPiles, card);
                 ConstraintLayout.LayoutParams cardParams = new ConstraintLayout.LayoutParams(cardWidth, cardHeight);
+                // Keep card params unconstrained; snapToPile will place them
                 root.addView(cardView, cardParams);
 
                 // Use post() on the cardView to ensure it's measured before its initial snap.
