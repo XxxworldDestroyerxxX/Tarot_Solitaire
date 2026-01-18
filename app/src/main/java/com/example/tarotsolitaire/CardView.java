@@ -24,9 +24,14 @@ public class CardView extends View {
     private Card card; // The logical card (may be null for layout inflation)
 
     private float offsetX, offsetY;
-    private Paint paint;
-    private RectF rect;
-    private Paint textPaint;
+    private float downRawX, downRawY;
+    private long downTimeMs;
+    private boolean isDragging = false;
+    private int touchSlop;
+    private boolean isPopAnimating = false;
+     private Paint paint;
+     private RectF rect;
+     private Paint textPaint;
 
     // Preallocated paints for tarot icon and top-left label to avoid allocations in onDraw
     private Paint iconPaint;
@@ -74,7 +79,10 @@ public class CardView extends View {
         labelPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
         labelPaint.setTextAlign(Paint.Align.LEFT);
         labelPaint.setColor(Color.BLACK);
-    }
+
+        // Touch slop for distinguishing tap vs drag
+        touchSlop = android.view.ViewConfiguration.get(getContext()).getScaledTouchSlop();
+     }
 
     @SuppressWarnings("unused")
     public Card getCard() {
@@ -97,7 +105,28 @@ public class CardView extends View {
         // Compute top-left label position and size
         float labelX = getWidth() * 0.10f;
         float labelYBase = getHeight() * 0.18f; // baseline approx for top-left label
-        float labelSize = Math.max(16f, Math.min(36f, getHeight() * 0.22f));
+        float baseLabelSize = Math.max(16f, Math.min(36f, getHeight() * 0.22f));
+
+        // Determine tightening factor from the pile's stack offset multiplier. When piles tighten
+        // (multiplier approaches a small minMult), we move the label towards the very top and shrink it.
+        float multiplier = 0.28f; // default
+        float maxMult = 0.28f;
+        float minMult = 0.04f;
+        if (currentPile != null && currentPile.getLogicalPile() != null) {
+            multiplier = currentPile.getLogicalPile().getStackOffsetMultiplier();
+        }
+        // normalized tightness t: 0 == loose (maxMult), 1 == tight (minMult)
+        float t = 0f;
+        if (maxMult > minMult) t = (maxMult - multiplier) / (maxMult - minMult);
+        t = Math.max(0f, Math.min(1f, t));
+
+        // Move label upward: from labelYBase up towards a small top padding (6px)
+        float topPadding = 6f;
+        float labelY = labelYBase - t * (labelYBase - topPadding);
+
+        // Shrink label slightly as tightening increases (up to 35% smaller)
+        float shrinkFactor = 0.35f;
+        float labelSize = baseLabelSize * (1f - t * shrinkFactor);
         labelPaint.setTextSize(labelSize);
 
         if (card != null && card.getType() == Card.Type.TAROT) {
@@ -112,10 +141,10 @@ public class CardView extends View {
             paint.setStrokeWidth(6f); // thicker border for tarot
             canvas.drawRoundRect(rect, radius, radius, paint);
 
-            // Top-left number indicator (white, bold)
+            // Top-left number indicator (white, bold) - use tightened labelY
             labelPaint.setColor(Color.WHITE);
             float labelAscent = labelPaint.getFontMetrics().ascent;
-            canvas.drawText(card.getRankString(), labelX, labelYBase - labelAscent / 2f, labelPaint);
+            canvas.drawText(card.getRankString(), labelX, labelY - labelAscent / 2f, labelPaint);
 
             // Centered white number (smaller than before) optional: we keep the centered main number but slightly smaller
             textPaint.setColor(Color.WHITE);
@@ -167,9 +196,9 @@ public class CardView extends View {
                     break;
             }
 
-            // Top-left number indicator (bold, colored by suit)
+            // Top-left number indicator (bold, colored by suit) - use tightened labelY
             labelPaint.setColor(suitColor);
-            canvas.drawText(card.getRankString(), labelX, labelYBase - labelPaint.getFontMetrics().ascent / 2f, labelPaint);
+            canvas.drawText(card.getRankString(), labelX, labelY - labelPaint.getFontMetrics().ascent / 2f, labelPaint);
 
             // Suit symbol below the label
             float suitSize = Math.max(12f, labelSize * 0.7f);
@@ -197,22 +226,70 @@ public class CardView extends View {
             case MotionEvent.ACTION_DOWN:
                 offsetX = event.getRawX() - getX();
                 offsetY = event.getRawY() - getY();
-                bringToFront();
-                performClick();
+                // Record down position/time for tap detection; don't call performClick here (prevents pop on drag)
+                downRawX = event.getRawX();
+                downRawY = event.getRawY();
+                downTimeMs = System.currentTimeMillis();
+                isDragging = false;
                 return true;
             case MotionEvent.ACTION_MOVE:
-                setX(event.getRawX() - offsetX);
-                setY(event.getRawY() - offsetY);
-                // During move, update hovered pile highlighting
-                updateHover();
+                float dx = Math.abs(event.getRawX() - downRawX);
+                float dy = Math.abs(event.getRawY() - downRawY);
+                if (!isDragging && (dx > touchSlop || dy > touchSlop)) {
+                    isDragging = true;
+                    // when drag actually starts, bring the view to front
+                    bringToFront();
+                }
+                if (isDragging) {
+                    setX(event.getRawX() - offsetX);
+                    setY(event.getRawY() - offsetY);
+                    // During move, update hovered pile highlighting
+                    updateHover();
+                }
                 return true;
             case MotionEvent.ACTION_UP:
                 // clear hover highlight on release
                 clearHover();
-                trySnapToPile();
+                long pressDuration = System.currentTimeMillis() - downTimeMs;
+                if (!isDragging && pressDuration < 300) {
+                    // Treat as tap: animate pop and call performClick for accessibility
+                    doTapPop();
+                    performClick();
+                } else {
+                    // It was a drag - snap to pile
+                    trySnapToPile();
+                }
                 return true;
         }
         return super.onTouchEvent(event);
+    }
+
+    private void doTapPop() {
+        if (isPopAnimating || getParent() == null) return;
+        isPopAnimating = true;
+        // Remember original state
+        final float origScaleX = getScaleX();
+        final float origScaleY = getScaleY();
+        final float origTZ = getTranslationZ();
+
+        // Bring to front visually
+        try { bringToFront(); } catch (Exception ignored) {}
+
+        final float targetScale = 1.08f;
+        final float targetTZ = Math.max(origTZ, 30f);
+        final int upMs = 120;
+        final int holdMs = 220;
+        final int downMs = 140;
+
+        // Animate up
+        animate().scaleX(targetScale).scaleY(targetScale).translationZ(targetTZ).setDuration(upMs).withEndAction(() -> {
+            // Hold briefly, then animate back
+            postDelayed(() -> {
+                animate().scaleX(origScaleX).scaleY(origScaleY).translationZ(origTZ).setDuration(downMs).withEndAction(() -> {
+                    isPopAnimating = false;
+                }).start();
+            }, holdMs);
+        }).start();
     }
 
     // Update which pile (if any) is being hovered while dragging
@@ -246,10 +323,8 @@ public class CardView extends View {
                 best = pileView;
                 if (debugOn) {
                     // add padded rect and threshold circle shape
-                    float cx = pileLeft + pileView.getWidth() / 2f;
-                    float cy = pileTop + pileView.getHeight() / 2f;
                     float thresh = Math.max(getWidth(), pileView.getWidth()) * 0.65f;
-                    debugShapes.add(new DebugOverlay.Shape(pileLeft - padding, pileTop - padding, pileRight + padding, pileBottom + padding, cx, cy, thresh, 0xFFFFAA00, pileView.getLabel() == null ? "" : pileView.getLabel()));
+                    debugShapes.add(new DebugOverlay.Shape(pileLeft - padding, pileTop - padding, pileRight + padding, pileBottom + padding, pileLeft + pileView.getWidth() / 2f, pileTop + pileView.getHeight() / 2f, thresh, 0xFFFFAA00, pileView.getLabel() == null ? "" : pileView.getLabel()));
                 }
                 break;
             }
@@ -264,10 +339,8 @@ public class CardView extends View {
             }
 
             if (debugOn) {
-                float cx = pileTargetX;
-                float cy = pileTargetY;
                 float thresh = Math.max(getWidth(), pileView.getWidth()) * 0.65f;
-                debugShapes.add(new DebugOverlay.Shape(pileLeft - padding, pileTop - padding, pileRight + padding, pileBottom + padding, cx, cy, thresh, 0xFF00BFFF, pileView.getLabel() == null ? "" : pileView.getLabel()));
+                debugShapes.add(new DebugOverlay.Shape(pileLeft - padding, pileTop - padding, pileRight + padding, pileBottom + padding, pileTargetX, pileTargetY, thresh, 0xFF00BFFF, pileView.getLabel() == null ? "" : pileView.getLabel()));
             }
         }
 

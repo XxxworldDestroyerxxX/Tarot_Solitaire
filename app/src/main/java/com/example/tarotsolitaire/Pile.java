@@ -7,6 +7,9 @@ public class Pile {
 
     private final List<Card> cards = new ArrayList<>();
 
+    // Allow runtime adjustment of how much vertical offset to apply per stacked card
+    private float stackOffsetMultiplier = 0.28f;
+
     /**
      * Determines if a given card can be placed on this pile based on game rules.
      * @param cardToPlace The card the user is trying to place.
@@ -32,7 +35,11 @@ public class Pile {
      * Special piles can override this to return 0 so cards fully overlap.
      */
     public float getStackOffsetMultiplier() {
-        return 0.28f;
+        return stackOffsetMultiplier;
+    }
+
+    public void setStackOffsetMultiplier(float multiplier) {
+        this.stackOffsetMultiplier = multiplier;
     }
 
     // --- Standard list management methods ---
