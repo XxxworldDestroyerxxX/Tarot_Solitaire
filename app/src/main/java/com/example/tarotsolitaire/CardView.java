@@ -115,19 +115,39 @@ public class CardView extends View {
         if (currentPile != null && currentPile.getLogicalPile() != null) {
             multiplier = currentPile.getLogicalPile().getStackOffsetMultiplier();
         }
-        // normalized tightness t: 0 == loose (maxMult), 1 == tight (minMult)
+        // normalized tightness rawT: 0 == loose (maxMult), 1 == tight (minMult)
+        float rawT = 0f;
+        if (maxMult > minMult) rawT = (maxMult - multiplier) / (maxMult - minMult);
+        rawT = Math.max(0f, Math.min(1f, rawT));
+
+        // If current pile appears to be an organize pile (has a label) don't tighten labels there
+        boolean isOrganizePile = (currentPile != null && currentPile.getLabel() != null && !currentPile.getLabel().isEmpty());
+
+        // Start shrinking only after a delay (so it starts one card later). shrinkStart between 0..1
+        float shrinkStart = 0.18f; // increased so shrinking starts later
         float t = 0f;
-        if (maxMult > minMult) t = (maxMult - multiplier) / (maxMult - minMult);
-        t = Math.max(0f, Math.min(1f, t));
+        if (!isOrganizePile) {
+            if (rawT <= shrinkStart) {
+                t = 0f;
+            } else {
+                t = (rawT - shrinkStart) / (1f - shrinkStart);
+                t = Math.max(0f, Math.min(1f, t));
+            }
+        } else {
+            t = 0f;
+        }
 
         // Move label upward: from labelYBase up towards a small top padding (6px)
         float topPadding = 6f;
         float labelY = labelYBase - t * (labelYBase - topPadding);
 
-        // Shrink label slightly as tightening increases (up to 35% smaller)
-        float shrinkFactor = 0.35f;
+        // Shrink label slightly as tightening increases (reduced from 35% to 25%)
+        float shrinkFactor = 0.25f;
         float labelSize = baseLabelSize * (1f - t * shrinkFactor);
         labelPaint.setTextSize(labelSize);
+
+        // Slightly increase weight when label gets small to improve legibility
+        if (t > 0.6f) labelPaint.setFakeBoldText(true); else labelPaint.setFakeBoldText(false);
 
         if (card != null && card.getType() == Card.Type.TAROT) {
             // Tarot cards: black background, gold border, white centered number and a small gold icon
