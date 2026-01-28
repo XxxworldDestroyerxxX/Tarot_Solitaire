@@ -25,6 +25,15 @@ public class MainMenu extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        Button toGame = findViewById(R.id.btn_toGame);
+        toGame.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainMenu.this, GamePage.class);
+                startActivity(intent);
+                finish();
+            }
+        });
 
         Button signOut = findViewById(R.id.btn_signout);
         signOut.setOnClickListener(new View.OnClickListener() {
