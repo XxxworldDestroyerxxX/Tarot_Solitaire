@@ -43,7 +43,7 @@ public class CardView extends View {
 
     // Track which pile we are currently hovering (for highlight/haptic)
     private PileView hoveredPile = null;
-    // Debug overlay reference (optional)
+    // Debug overlay references (optional)
     private DebugOverlay debugOverlay = null;
 
     private Bitmap tarotBackground;
