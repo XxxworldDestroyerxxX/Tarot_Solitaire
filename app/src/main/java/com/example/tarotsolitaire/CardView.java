@@ -203,37 +203,12 @@ public class CardView extends View {
             canvas.restore();
 
             paint.setStyle(Paint.Style.STROKE);
-            // gold-ish border
-            paint.setColor(Color.rgb(212, 175, 55));
-            paint.setStrokeWidth(6f); // thicker border for tarot
-            canvas.drawRoundRect(rect, radius, radius, paint);
 
             // Top-left number indicator (white, bold) - use tightened labelY
             labelPaint.setColor(Color.WHITE);
             float labelAscent = labelPaint.getFontMetrics().ascent;
             canvas.drawText(card.getRankString(), labelX, labelY - labelAscent / 2f, labelPaint);
 
-            // Centered white number (smaller than before) optional: we keep the centered main number but slightly smaller
-            textPaint.setColor(Color.WHITE);
-            float centerTextSize = Math.max(12f, Math.min(36f, getHeight() * 0.28f));
-            textPaint.setTextSize(centerTextSize);
-            textPaint.setTextAlign(Paint.Align.CENTER);
-            float cx = getWidth() / 2f;
-            Paint.FontMetrics fm = textPaint.getFontMetrics();
-            float cy = getHeight() / 2f - (fm.ascent + fm.descent) / 2f;
-            canvas.drawText(card.getRankString(), cx, cy, textPaint);
-
-            // Draw small gold circular icon at top-right using preallocated paint
-            float iconRadius = Math.max(8f, getWidth() * 0.10f);
-            float iconCx = getWidth() - iconRadius - 6f;
-            float iconCy = iconRadius + 6f;
-            canvas.drawCircle(iconCx, iconCy, iconRadius, iconPaint);
-
-            // White 'T' inside icon
-            iconTextPaint.setTextSize(iconRadius);
-            Paint.FontMetrics ifm = iconTextPaint.getFontMetrics();
-            float iy = iconCy - (ifm.ascent + ifm.descent) / 2f;
-            canvas.drawText("T", iconCx, iy, iconTextPaint);
 
         } else if (card != null) {
             // Standard card appearance: white background, black stroke and colored suit/rank
