@@ -19,10 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Helper for user profile operations: ensure profile doc exists, add completion times, and fetch leaderboard.
- * All methods are asynchronous and report via callbacks.
- */
 public class UserProfileManager {
     private static final String TAG = "UserProfileManager";
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -47,9 +43,6 @@ public class UserProfileManager {
         }
     }
 
-    /**
-     * Ensure a minimal profile document exists for the user. If it exists, does nothing.
-     */
     public void ensureProfileExists(@NonNull String uid, String email, String nickname, @NonNull VoidCallback cb) {
         DocumentReference docRef = db.collection("users").document(uid);
         docRef.get()
@@ -79,10 +72,7 @@ public class UserProfileManager {
                 });
     }
 
-    /**
-     * Record a completion time (milliseconds) for a user. This atomically appends the time to the "times"
-     * array and updates "bestTime" if the new time is better (smaller) or if bestTime is null.
-     */
+
     public void addCompletionTime(@NonNull String uid, long timeMillis, @NonNull VoidCallback cb) {
         DocumentReference docRef = db.collection("users").document(uid);
 
@@ -122,9 +112,7 @@ public class UserProfileManager {
           });
     }
 
-    /**
-     * Fetch the top N users by bestTime ascending (lower is better). Documents without bestTime are skipped.
-     */
+
     public void fetchLeaderboard(int limit, @NonNull LeaderboardCallback cb) {
         Query q = db.collection("users").orderBy("bestTime", Query.Direction.ASCENDING).limit(limit);
         q.get()

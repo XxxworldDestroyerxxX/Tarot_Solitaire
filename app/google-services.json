@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "959968039706",
+    "project_id": "tarot-solitaire",
+    "storage_bucket": "tarot-solitaire.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:959968039706:android:d18ad894209d4f042692a3",
+        "android_client_info": {
+          "package_name": "com.example.tarotsolitaire"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCZi4-1zaU3hhjXju7Z4Qx97KiU3Y0darQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

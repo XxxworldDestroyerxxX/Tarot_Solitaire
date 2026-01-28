@@ -6,7 +6,7 @@ import android.util.Log;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 
-public class MyApp extends Application {
+public class Firebase extends Application {
     private static final String TAG = "MyApp";
 
     @Override

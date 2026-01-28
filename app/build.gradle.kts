@@ -44,6 +44,9 @@ dependencies {
     // Use non-KTX (Java) Firebase SDKs to avoid introducing Kotlin runtime
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+    implementation(libs.credentials)
+    implementation(libs.credentials.play.services.auth)
+    implementation(libs.googleid)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

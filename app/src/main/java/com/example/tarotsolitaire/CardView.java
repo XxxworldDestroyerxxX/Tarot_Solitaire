@@ -2,9 +2,12 @@ package com.example.tarotsolitaire;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
@@ -43,9 +46,14 @@ public class CardView extends View {
     // Debug overlay reference (optional)
     private DebugOverlay debugOverlay = null;
 
+    private Bitmap tarotBackground;
+
+    private static final String TAG = "CardView";
+
     // Standard constructors so tools/layout inflation won't warn
-    public CardView(Context context) {
+    public CardView(Context context, Card card) {
         super(context);
+        this.card = card;
         init();
     }
 
@@ -60,8 +68,32 @@ public class CardView extends View {
     }
 
     private void init() {
+        Log.d(TAG, "init: start");
+
+
         paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         rect = new RectF();
+
+        if(card.getType() == Card.Type.TAROT)
+        {
+            int cardNumber  = Integer.valueOf(card.getRankString());
+            Log.d(TAG, "init: cardNumber: " + cardNumber);
+            String resName = "tarot_card_" + cardNumber;
+            Log.d(TAG, "init: resName: " + resName);
+
+            resName = "tarot_card_1";
+
+            // 2. Find the integer ID for that name
+            // "drawable" is the folder, context.getPackageName() finds your app package
+            int resId = this.getContext().getResources().getIdentifier(resName, "drawable", this.getContext().getPackageName());
+            try {
+                tarotBackground = BitmapFactory.decodeResource(getResources(), resId);
+            } catch (Exception e) {
+                Log.e("CardView", "Could not load tarot background image", e);
+            }
+        }
+
+
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         // Default text size; will be adjusted based on card height when drawing
         textPaint.setTextSize(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14, getResources().getDisplayMetrics()));
@@ -82,6 +114,8 @@ public class CardView extends View {
 
         // Touch slop for distinguishing tap vs drag
         touchSlop = android.view.ViewConfiguration.get(getContext()).getScaledTouchSlop();
+
+        Log.d(TAG, "init: done");
      }
 
     @SuppressWarnings("unused")
@@ -151,9 +185,22 @@ public class CardView extends View {
 
         if (card != null && card.getType() == Card.Type.TAROT) {
             // Tarot cards: black background, gold border, white centered number and a small gold icon
-            paint.setStyle(Paint.Style.FILL);
-            paint.setColor(Color.BLACK);
-            canvas.drawRoundRect(rect, radius, radius, paint);
+            //paint.setStyle(Paint.Style.FILL);
+            //paint.setColor(Color.BLACK);
+
+            //canvas.drawRoundRect(rect, radius, radius, paint);
+            canvas.save();
+
+            // Create a path for the rounded rectangle
+            Path clipPath = new Path();
+            clipPath.addRoundRect(rect, radius, radius, Path.Direction.CW);
+            canvas.clipPath(clipPath);
+
+            // Draw the bitmap. null src means use whole image, rect dst means stretch to fit card
+
+            canvas.drawBitmap(tarotBackground, null, rect, paint);
+
+            canvas.restore();
 
             paint.setStyle(Paint.Style.STROKE);
             // gold-ish border

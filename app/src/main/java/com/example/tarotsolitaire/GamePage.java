@@ -424,12 +424,11 @@ public class GamePage extends AppCompatActivity {
                 if (th > 0) useH = th;
             }
 
-            CardView cardView = new CardView(this);
+            CardView cardView = new CardView(this, card);
             // attach debug overlay so CardView can post debug shapes while dragging
             cardView.setDebugOverlay(debugOverlay);
             ConstraintLayout.LayoutParams cardParams = new ConstraintLayout.LayoutParams(useW, useH);
             cardView.setAllPiles(allPiles);
-            cardView.setCard(card);
 
             // Listener records last move (single level) and checks win
             cardView.setOnPlacedListener((placedCard, fromPile, toPile) -> {
