@@ -81,7 +81,7 @@ public class CardView extends View {
             String resName = "tarot_card_" + cardNumber;
             Log.d(TAG, "init: resName: " + resName);
 
-            resName = "tarot_card_1";
+            resName = "tarot_card_0";
 
             // 2. Find the integer ID for that name
             // "drawable" is the folder, context.getPackageName() finds your app package
