@@ -33,7 +33,6 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.text.BreakIterator;
 
 public class loginPage extends BaseActivity {
 
@@ -184,6 +183,9 @@ public class loginPage extends BaseActivity {
                                 String nickname = document.getString("nickname");
                                 Log.d(TAG, "getUserDataFromFirestore onComplete: nickname: " + nickname);
 
+                                // Save locally for offline access / convenience
+                                if (nickname != null) saveUserDataLocally(nickname);
+
                                 Toast.makeText(loginPage.this, "Login successful!", Toast.LENGTH_SHORT).show();
 
                                 // Navigate to FeedActivity
@@ -194,11 +196,18 @@ public class loginPage extends BaseActivity {
                                 Log.i(TAG, "User profile missing; creating default profile doc for uid=" + userId);
                                 Map<String, Object> userMap = new HashMap<>();
                                 String email = auth.getCurrentUser().getEmail();
-                                String defaultNickname = "";
+                                final String defaultNickname = "";
                                 if (email != null && email.contains("@")) {
-                                    defaultNickname = email.substring(0, email.indexOf('@'));
+                                    final String computedNick = email.substring(0, email.indexOf('@'));
+                                    userMap.put("nickname", computedNick);
+                                    // keep a reference for the listener to save locally
+                                    // Note: we'll use computedNick in the listener by referencing it directly
+                                    // (no further changes needed to listener because it will close over computedNick)
+
+                                    // Also ensure we don't overwrite nickname when putting into the map later.
+                                } else {
+                                    userMap.put("nickname", defaultNickname);
                                 }
-                                userMap.put("nickname", defaultNickname);
                                 userMap.put("email", email);
                                 userMap.put("createdAt", FieldValue.serverTimestamp());
                                 userMap.put("bestTime", null);
@@ -209,6 +218,11 @@ public class loginPage extends BaseActivity {
                                             @Override
                                             public void onSuccess(Void aVoid) {
                                                 Log.i(TAG, "Default user profile created for uid=" + userId);
+                                                // Save locally - prefer computedNick if available
+                                                try {
+                                                    Object nickObj = userMap.get("nickname");
+                                                    if (nickObj instanceof String) saveUserDataLocally((String) nickObj);
+                                                } catch (Exception ignored) {}
                                                 startMainMenu(true);
                                             }
                                         })

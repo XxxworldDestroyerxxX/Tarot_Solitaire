@@ -16,6 +16,14 @@ import android.os.Looper;
 import android.view.Gravity;
 import androidx.annotation.NonNull;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class GamePage extends BaseActivity {
 
     private static final String TAG = "GamePage";
@@ -629,6 +637,39 @@ public class GamePage extends BaseActivity {
             if (winTextView != null) winTextView.setVisibility(View.VISIBLE);
             try { if (timerHandler != null) timerHandler.removeCallbacksAndMessages(null); } catch (Exception ignored) {}
             Log.d(TAG, "checkWin: player won in " + timeStr + " (ms=" + elapsed + ")");
+
+            // If user is signed in, update their bestTime in Firestore if this is a new record
+            try {
+                if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+                    String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    FirebaseFirestore db = FirebaseFirestore.getInstance();
+                    db.collection("users").document(uid).get().addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            DocumentSnapshot doc = task.getResult();
+                            Long previousBest = null;
+                            if (doc != null && doc.contains("bestTime")) {
+                                Object o = doc.get("bestTime");
+                                if (o instanceof Long) previousBest = (Long) o;
+                                else if (o instanceof Integer) previousBest = ((Integer)o).longValue();
+                            }
+                            if (previousBest == null || elapsed < previousBest) {
+                                // update bestTime using set with merge so doc is created/merged if missing
+                                Map<String, Object> m = new HashMap<>();
+                                m.put("bestTime", elapsed);
+                                db.collection("users").document(uid).set(m, SetOptions.merge())
+                                        .addOnSuccessListener(aVoid -> Log.i(TAG, "Updated bestTime to " + elapsed))
+                                        .addOnFailureListener(e -> Log.e(TAG, "Failed to update bestTime", e));
+                            } else {
+                                Log.d(TAG, "Existing bestTime (" + previousBest + ") is better than " + elapsed);
+                            }
+                        } else {
+                            Log.w(TAG, "Could not read user document to update bestTime", task.getException());
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error while updating bestTime", e);
+            }
         }
     }
 

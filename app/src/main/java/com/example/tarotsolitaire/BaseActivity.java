@@ -1,7 +1,6 @@
 package com.example.tarotsolitaire;
 
 import android.os.Bundle;
-import android.view.View;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -44,14 +43,28 @@ public class BaseActivity extends AppCompatActivity {
     }
 
     /**
-     * Hide only the status bar (time/battery area). Leaves navigation bars alone.
+     * Override this to control whether the navigation (bottom) bar should also be hidden.
+     * Default is true (immersive).
+     */
+    protected boolean shouldHideNavigationBar() { return true; }
+
+    /**
+     * Hide only the status bar (time/battery area) and optionally the navigation bar.
+     * Leaves navigation bars alone if shouldHideNavigationBar() returns false.
      */
     protected void hideStatusBar() {
         try {
             // Let content draw behind system bars so we can be truly fullscreen
             WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
             WindowInsetsControllerCompat insetsController = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
-            insetsController.hide(WindowInsetsCompat.Type.statusBars());
+
+            int typesToHide = WindowInsetsCompat.Type.statusBars();
+            if (shouldHideNavigationBar()) {
+                typesToHide |= WindowInsetsCompat.Type.navigationBars();
+            }
+
+            insetsController.hide(typesToHide);
+            // Allow users to swipe to temporarily reveal and then auto-hide again
             insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         } catch (Exception ignored) {
             // Swallow any issues on older devices; hiding status bar is best-effort.
@@ -59,14 +72,15 @@ public class BaseActivity extends AppCompatActivity {
     }
 
     /**
-     * Show the status bar again and restore decor fitting.
+     * Show the status/navigation bars again and restore decor fitting.
      */
     protected void showStatusBar() {
         try {
             WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
             WindowInsetsControllerCompat insetsController = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
-            insetsController.show(WindowInsetsCompat.Type.statusBars());
+            int typesToShow = WindowInsetsCompat.Type.statusBars();
+            if (shouldHideNavigationBar()) typesToShow |= WindowInsetsCompat.Type.navigationBars();
+            insetsController.show(typesToShow);
         } catch (Exception ignored) {}
     }
 }
-
