@@ -23,7 +23,7 @@ import com.example.tarotsolitaire.RegistrationManager;
 
 import java.text.BreakIterator;
 
-public class RegistrationPage extends AppCompatActivity {
+public class RegistrationPage extends BaseActivity {
 
     private EditText passwordEditText;
     private EditText TextPersonName;

@@ -16,7 +16,7 @@ import android.os.Looper;
 import android.view.Gravity;
 import androidx.annotation.NonNull;
 
-public class GamePage extends AppCompatActivity {
+public class GamePage extends BaseActivity {
 
     private static final String TAG = "GamePage";
 

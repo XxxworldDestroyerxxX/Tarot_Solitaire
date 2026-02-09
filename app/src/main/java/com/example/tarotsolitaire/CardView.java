@@ -74,24 +74,24 @@ public class CardView extends View {
         paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         rect = new RectF();
 
-        if(card.getType() == Card.Type.TAROT)
-        {
-            int cardNumber  = Integer.valueOf(card.getRankString());
-            Log.d(TAG, "init: cardNumber: " + cardNumber);
-            String resName = "tarot_card_" + cardNumber;
-            Log.d(TAG, "init: resName: " + resName);
+        //if(card.getType() == Card.Type.TAROT)
+        //{
+        //    int cardNumber  = Integer.valueOf(card.getRankString());
+        //    Log.d(TAG, "init: cardNumber: " + cardNumber);
+        //    String resName = "tarot_card_" + cardNumber;
+        //    Log.d(TAG, "init: resName: " + resName);
 
-            resName = "tarot_card_0";
+        //    resName = "tarot_card_0";
 
             // 2. Find the integer ID for that name
             // "drawable" is the folder, context.getPackageName() finds your app package
-            int resId = this.getContext().getResources().getIdentifier(resName, "drawable", this.getContext().getPackageName());
-            try {
-                tarotBackground = BitmapFactory.decodeResource(getResources(), resId);
-            } catch (Exception e) {
-                Log.e("CardView", "Could not load tarot background image", e);
-            }
-        }
+        //    int resId = this.getContext().getResources().getIdentifier(resName, "drawable", this.getContext().getPackageName());
+        //    try {
+        //        tarotBackground = BitmapFactory.decodeResource(getResources(), resId);
+        //    } catch (Exception e) {
+        //        Log.e("CardView", "Could not load tarot background image", e);
+        //    }
+        //}
 
 
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -185,20 +185,19 @@ public class CardView extends View {
 
         if (card != null && card.getType() == Card.Type.TAROT) {
             // Tarot cards: black background, gold border, white centered number and a small gold icon
-            //paint.setStyle(Paint.Style.FILL);
-            //paint.setColor(Color.BLACK);
-
-            //canvas.drawRoundRect(rect, radius, radius, paint);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.BLACK);
+            canvas.drawRoundRect(rect, radius, radius, paint);
             canvas.save();
 
             // Create a path for the rounded rectangle
-            Path clipPath = new Path();
-            clipPath.addRoundRect(rect, radius, radius, Path.Direction.CW);
-            canvas.clipPath(clipPath);
+            //Path clipPath = new Path();
+            //clipPath.addRoundRect(rect, radius, radius, Path.Direction.CW);
+            //canvas.clipPath(clipPath);
 
             // Draw the bitmap. null src means use whole image, rect dst means stretch to fit card
 
-            canvas.drawBitmap(tarotBackground, null, rect, paint);
+            //canvas.drawBitmap(tarotBackground, null, rect, paint);
 
             canvas.restore();
 

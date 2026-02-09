@@ -35,7 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.text.BreakIterator;
 
-public class loginPage extends AppCompatActivity {
+public class loginPage extends BaseActivity {
 
     FirebaseAuth auth;
     private EditText emailEditText;
