@@ -1,5 +1,6 @@
 package com.example.tarotsolitaire;
 
+import android.content.Intent;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -222,10 +223,23 @@ public class GamePage extends BaseActivity {
         undoB.setVisibility(View.VISIBLE);
         undoBtn = undoB;
 
+
         // Debug toggle button
         android.widget.Button debugB = new android.widget.Button(this);
         debugB.setText(getString(R.string.debug_toggle));
         debugB.setVisibility(View.VISIBLE);
+
+        // Restart button
+        android.widget.Button restartB = new android.widget.Button(this);
+        restartB.setText(getString(R.string.restart));
+        restartB.setVisibility(View.VISIBLE);
+        restartBtn = restartB;
+
+        // Return button
+        android.widget.Button returnB = new android.widget.Button(this);
+        returnB.setText(getString(R.string.Return));
+        returnB.setVisibility(View.VISIBLE);
+
 
         // Add views into linear layout: timer, small spacer, undo, small spacer, debug
         ll.addView(timerView, llParams);
@@ -238,17 +252,17 @@ public class GamePage extends BaseActivity {
         View spacer2 = new View(this);
         ll.addView(spacer2, spLp);
         ll.addView(debugB, llParams);
+        View spacer3 = new View(this);
+        ll.addView(spacer3, spLp);
+        ll.addView(restartBtn, llParams);
+        View spacer4 = new View(this);
+        ll.addView(spacer4, spLp);
+        ll.addView(returnB, llParams);
 
         // Place the horizontal layout at bottom-left of the controls overlay
         FrameLayout.LayoutParams llFrameLp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM | Gravity.START);
         llFrameLp.setMargins(baseMargin, 0, 0, baseMargin);
         controls.addView(ll, llFrameLp);
-
-        // Restart button top-left
-        android.widget.Button restartB = new android.widget.Button(this);
-        restartB.setText(getString(R.string.restart));
-        restartB.setVisibility(View.VISIBLE);
-        restartBtn = restartB;
 
         // Create debug overlay (initially hidden) and add to root (on top of game view)
         debugOverlay = new DebugOverlay(this);
@@ -256,10 +270,6 @@ public class GamePage extends BaseActivity {
         debugOverlay.setLayoutParams(debugLpFull);
         debugOverlay.setVisibility(View.GONE);
         root.addView(debugOverlay);
-
-        FrameLayout.LayoutParams restartLp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.START);
-        restartLp.setMargins(baseMargin, baseMargin, 0, 0);
-        controls.addView(restartBtn, restartLp);
 
         // Wire debug toggle to show/hide overlay and bring it to front when visible
         debugB.setOnClickListener(v -> {
@@ -286,6 +296,16 @@ public class GamePage extends BaseActivity {
                     Log.e(TAG, "Error while running restartGame from restart click", e);
                     android.widget.Toast.makeText(this, "Restart failed: " + e.getMessage(), android.widget.Toast.LENGTH_LONG).show();
                 }
+            });
+        });
+
+        // Wire return button to take player back to main menu
+        returnB.setOnClickListener(v -> {
+            Log.d(TAG, "Return button clicked (Go to main menu activity)");
+            runOnUiThread(() -> {
+                Intent intent = new Intent(GamePage.this, MainMenu.class);
+                startActivity(intent);
+                finish();
             });
         });
 
