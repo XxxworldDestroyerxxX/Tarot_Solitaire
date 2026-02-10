@@ -9,12 +9,13 @@
 
     <TextView
         android:id="@+id/tv_player_info"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Your rank: -"
         android:textSize="16sp"
         android:textStyle="bold"
         android:paddingBottom="8dp"
+        android:layout_gravity="center"
         android:textColor="#212121" />
 
     <androidx.recyclerview.widget.RecyclerView

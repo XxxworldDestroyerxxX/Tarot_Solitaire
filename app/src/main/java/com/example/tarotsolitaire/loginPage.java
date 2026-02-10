@@ -73,14 +73,7 @@ public class loginPage extends BaseActivity {
         // Initialize the EditText variables using findViewById
         emailEditText = findViewById(R.id.et_email);
         passwordEditText = findViewById(R.id.et_password);
-        Button continueButton = findViewById(R.id.btn_continue);
-
-        if (emailEditText == null) {
-            Log.e(TAG, "Email EditText not found!");
-        }
-        if (passwordEditText == null) {
-            Log.e(TAG, "Password EditText not found!");
-        }
+        // Continue button removed: signed-in users are routed straight to MainMenu
 
         TextView registerLinkTextView = findViewById(R.id.link_register);
         registerLinkTextView.setOnClickListener(new View.OnClickListener() {
@@ -102,18 +95,12 @@ public class loginPage extends BaseActivity {
             }
         });
 
-        // If user already signed in, show Continue button (don't auto-navigate)
+        // If user already signed in, automatically fetch their profile and navigate to MainMenu
         if (auth != null && auth.getCurrentUser() != null) {
-            Log.i("LoginActivity", "User already signed in (uid=" + auth.getCurrentUser().getUid() + ")");
-            continueButton.setVisibility(View.VISIBLE);
-            continueButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent intent = new Intent(loginPage.this, MainMenu.class);
-                    startActivity(intent);
-                    finish();
-                }
-            });
+            Log.i("LoginActivity", "User already signed in (uid=" + auth.getCurrentUser().getUid() + ") - auto-launching MainMenu");
+            // Attempt to load user profile (this will call startMainMenu when done)
+            getUserDataFromFirestore();
+            return; // stop further UI setup on the login screen
         } else {
             Log.i("LoginActivity", "No user currently signed in");
         }
