@@ -58,6 +58,11 @@ public class Leaderboard extends BaseActivity {
         adapter = new LeaderAdapter();
         recyclerView.setAdapter(adapter);
 
+        // Force LTR layout direction so leaderboard looks the same regardless of device locale (prevents RTL mirroring)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            root.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+        }
+
         Button back = findViewById(R.id.btn_back);
         back.setOnClickListener(v -> {
             startActivity(new Intent(Leaderboard.this, MainMenu.class));

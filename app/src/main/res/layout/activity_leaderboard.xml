@@ -5,7 +5,9 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="@android:color/background_light">
+    android:background="@android:color/background_light"
+    android:layoutDirection="ltr"
+    android:textDirection="ltr">
 
     <TextView
         android:id="@+id/tv_player_info"
@@ -16,7 +18,8 @@
         android:textStyle="bold"
         android:paddingBottom="8dp"
         android:layout_gravity="center"
-        android:textColor="#212121" />
+        android:textColor="#212121"
+        android:textAlignment="center" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_leaderboard"
