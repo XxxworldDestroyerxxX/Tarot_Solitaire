@@ -73,6 +73,9 @@ public class optionsPage extends BaseActivity {
         Button btnLoop = findViewById(R.id.btn_loop_mode);
         Spinner spinner = findViewById(R.id.spinner_song_list);
 
+        // Initialize loop button text based on current mode
+        btnLoop.setText(musicManager.getLoopMode() == MusicManager.LoopMode.ONE ? "Loop: On" : "Loop: Off");
+
         // If there are no playable songs, show a clear message and disable controls
         String[] titles = musicManager.getTitles();
         int[] playlist = musicManager.getPlaylist();
@@ -99,12 +102,9 @@ public class optionsPage extends BaseActivity {
 
         btnLoop.setOnClickListener(v -> {
             MusicManager.LoopMode cur = musicManager.getLoopMode();
-            MusicManager.LoopMode next;
-            if (cur == MusicManager.LoopMode.OFF) next = MusicManager.LoopMode.ONE;
-            else if (cur == MusicManager.LoopMode.ONE) next = MusicManager.LoopMode.ALL;
-            else next = MusicManager.LoopMode.OFF;
+            MusicManager.LoopMode next = (cur == MusicManager.LoopMode.OFF) ? MusicManager.LoopMode.ONE : MusicManager.LoopMode.OFF;
             musicManager.setLoopMode(next);
-            btnLoop.setText("Loop: " + (next == MusicManager.LoopMode.OFF ? "Off" : next == MusicManager.LoopMode.ONE ? "One" : "All"));
+            btnLoop.setText(next == MusicManager.LoopMode.ONE ? "Loop: On" : "Loop: Off");
         });
 
         if (titles != null && titles.length > 0) {

@@ -23,7 +23,7 @@ public class MusicManager {
     private int index = 0;
     private boolean isMuted = false;
     private float volume = 1.0f;
-    public enum LoopMode { OFF, ONE, ALL }
+    public enum LoopMode { OFF, ONE } // OFF = advance to next, ONE = repeat current
     private LoopMode loopMode = LoopMode.OFF;
     private SharedPreferences prefs;
     private final List<Listener> listeners = new ArrayList<>();
@@ -42,7 +42,7 @@ public class MusicManager {
         isMuted = prefs.getBoolean("music_muted", false);
         volume = prefs.getFloat("music_volume", 1.0f);
         int lm = prefs.getInt("music_loop_mode", 0);
-        try { loopMode = LoopMode.values()[lm]; } catch (Exception e) { loopMode = LoopMode.OFF; }
+        try { if (lm >= 0 && lm < LoopMode.values().length) loopMode = LoopMode.values()[lm]; else loopMode = LoopMode.OFF; } catch (Exception e) { loopMode = LoopMode.OFF; }
 
         // If no playlist provided by code, try to auto-load any raw resources
         if (playlist == null || playlist.length == 0) {
@@ -151,6 +151,7 @@ public class MusicManager {
         release();
         if (playlist.length == 0) return;
         int res = playlist[index];
+        Log.d(TAG, "createPlayer: creating MediaPlayer for index=" + index + ", resId=" + res);
         try {
             player = MediaPlayer.create(app, res);
             if (player == null) {
@@ -167,21 +168,39 @@ public class MusicManager {
     }
 
     private void onTrackCompleted() {
+        if (playlist.length == 0) return;
+        Log.d(TAG, "onTrackCompleted: currentIndex=" + index + ", loopMode=" + loopMode);
+        // If loop single-song is enabled, replay same index (restart current song)
         if (loopMode == LoopMode.ONE) {
+            try {
+                if (player != null) {
+                    // restart current track from beginning
+                    try { player.seekTo(0); } catch (Exception ignored) {}
+                    if (!player.isPlaying()) player.start();
+                    notifyListeners();
+                    Log.d(TAG, "onTrackCompleted: loop ONE - restarted index=" + index);
+                    return;
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "onTrackCompleted: failed to restart current track, falling back to play()", e);
+            }
             play();
             return;
         }
-        index++;
-        if (index >= playlist.length) {
-            if (loopMode == LoopMode.ALL) index = 0; else index = playlist.length - 1;
-        }
+        // Otherwise advance to the next song and wrap around
+        int oldIndex = index;
+        index = (index + 1) % playlist.length;
         saveIndex();
+        Log.d(TAG, "onTrackCompleted: advancing from " + oldIndex + " to " + index);
+        // Create a fresh player for the new index so we don't keep using the completed player
+        createPlayer();
         play();
     }
 
     public void play() {
         if (playlist.length == 0) return;
         if (player == null) createPlayer();
+        Log.d(TAG, "play: attempting to play index=" + index + ", isPlaying=" + (player != null && player.isPlaying()));
         if (player != null && !player.isPlaying()) player.start();
         prefs.edit().putBoolean("music_is_playing", true).apply();
         notifyListeners();
