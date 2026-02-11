@@ -18,6 +18,8 @@ import com.google.firebase.auth.FirebaseAuth;
 
 public class MainMenu extends BaseActivity {
 
+    private MusicManager.Listener musicListener;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,6 +51,12 @@ public class MainMenu extends BaseActivity {
                 ((LinearLayout) root).addView(tvNew, 0);
             }
         }
+
+        TextView now = findViewById(R.id.tv_now_playing);
+        MusicManager mgr = MusicManager.get(this);
+        now.setText("Now playing: " + mgr.getCurrentTitle());
+        musicListener = (isPlaying, idx, title) -> runOnUiThread(() -> now.setText("Now playing: " + title));
+        mgr.registerListener(musicListener);
 
         Button toGame = findViewById(R.id.btn_toGame);
         toGame.setOnClickListener(new View.OnClickListener() {
@@ -96,6 +104,16 @@ public class MainMenu extends BaseActivity {
                 startActivity(intent);
             }
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (musicListener != null) {
+            MusicManager mgr = MusicManager.get(this);
+            mgr.unregisterListener(musicListener);
+            musicListener = null;
+        }
     }
 
     private String getSavedNickname() {

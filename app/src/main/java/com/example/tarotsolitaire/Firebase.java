@@ -26,5 +26,12 @@ public class Firebase extends Application {
         } catch (Exception e) {
             Log.e(TAG, "Error while reading Firebase options", e);
         }
+
+        // Ensure the MusicManager is initialized at app startup so music can auto-play if enabled
+        try {
+            MusicManager.get(this);
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to initialize MusicManager on app startup", e);
+        }
     }
 }

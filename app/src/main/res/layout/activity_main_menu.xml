@@ -18,12 +18,25 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="48dp" />
+
+    <!-- Current song indicator -->
+    <TextView
+        android:id="@+id/tv_now_playing"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Now playing: —"
+        android:textSize="14sp"
+        app:layout_constraintTop_toBottomOf="@id/tv_welcome"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp" />
+
     <Button
         android:id="@+id/btn_toGame"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Play!"
-        app:layout_constraintTop_toBottomOf="@id/tv_welcome"
+        app:layout_constraintTop_toBottomOf="@id/tv_now_playing"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="24dp" />

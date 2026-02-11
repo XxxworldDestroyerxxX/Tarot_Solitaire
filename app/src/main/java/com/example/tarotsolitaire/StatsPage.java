@@ -104,8 +104,8 @@ public class StatsPage extends AppCompatActivity {
                 if (bestTimeMs >= 0) tvBestTime.setText(String.format(Locale.US, "Best Time: %s", formatElapsed(bestTimeMs)));
                 else tvBestTime.setText("Best Time: —");
 
-                if (totalPlayTimeMs > 0) tvTimePlayed.setText(String.format(Locale.US, "Time Played: %s", formatTimeLong(totalPlayTimeMs)));
-                else tvTimePlayed.setText("Time Played: —");
+                if (totalPlayTimeMs > 0) tvTimePlayed.setText(formatTimePlayedLong(totalPlayTimeMs));
+                else tvTimePlayed.setText("Time Played: 0 hours, 0 minutes");
             } else {
                 tvGamesPlayed.setText("Games Played: (error loading)");
                 tvGamesWon.setText("Games Won: (error)");
@@ -123,12 +123,10 @@ public class StatsPage extends AppCompatActivity {
         return String.format(Locale.US, "%d:%02d", mins, secs);
     }
 
-    private static String formatTimeLong(long ms) {
+    private static String formatTimePlayedLong(long ms) {
         long totalSec = ms / 1000;
         long hours = totalSec / 3600;
         long mins = (totalSec % 3600) / 60;
-        long secs = totalSec % 60;
-        if (hours > 0) return String.format(Locale.US, "%d:%02d:%02d", hours, mins, secs);
-        return String.format(Locale.US, "%d:%02d", mins, secs);
+        return String.format(Locale.US, "Time Played: %d hours, %d minutes", hours, mins);
     }
 }
