@@ -28,6 +28,9 @@ public class MusicManager {
     private SharedPreferences prefs;
     private final List<Listener> listeners = new ArrayList<>();
 
+    // Transient flag used when the app auto-pauses playback due to losing focus/backgrounding
+    private boolean autoPausedByFocus = false;
+
     public interface Listener {
         void onStateChanged(boolean isPlaying, int index, String title);
     }
@@ -264,6 +267,40 @@ public class MusicManager {
     }
 
     public void release() { if (player != null) { try { player.release(); } catch (Exception ignored) {} player = null; } }
+
+    /**
+     * Called by the application when it moves to the background. If music is playing
+     * we pause it and remember that we auto-paused so we can resume when returning to foreground.
+     */
+    public void handleAppBackgrounded() {
+        try {
+            if (isPlaying()) {
+                pause();
+                autoPausedByFocus = true;
+                Log.d(TAG, "handleAppBackgrounded: music auto-paused");
+            } else {
+                autoPausedByFocus = false;
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "handleAppBackgrounded: error while auto-pausing", e);
+        }
+    }
+
+    /**
+     * Called by the application when it returns to the foreground. If we auto-paused
+     * playback previously, resume it now and clear the flag.
+     */
+    public void handleAppForegrounded() {
+        try {
+            if (autoPausedByFocus) {
+                play();
+                autoPausedByFocus = false;
+                Log.d(TAG, "handleAppForegrounded: music auto-resumed");
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "handleAppForegrounded: error while auto-resuming", e);
+        }
+    }
 
     // Public getters for playlist and titles
     public int[] getPlaylist() { return playlist.clone(); }
