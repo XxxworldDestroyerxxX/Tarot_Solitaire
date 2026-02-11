@@ -1,5 +1,6 @@
 package com.example.tarotsolitaire;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -55,7 +56,6 @@ public class MainMenu extends BaseActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(MainMenu.this, GamePage.class);
                 startActivity(intent);
-                finish();
             }
         });
 
@@ -65,7 +65,6 @@ public class MainMenu extends BaseActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(MainMenu.this, optionsPage.class);
                 startActivity(intent);
-                finish();
             }
         });
 
@@ -75,7 +74,6 @@ public class MainMenu extends BaseActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(MainMenu.this, Leaderboard.class);
                 startActivity(intent);
-                finish();
             }
         });
 
@@ -87,6 +85,15 @@ public class MainMenu extends BaseActivity {
                 Intent intent = new Intent(MainMenu.this, loginPage.class);
                 startActivity(intent);
                 finish();
+            }
+        });
+
+        Button statsPage = findViewById(R.id.btn_statsPage);
+        statsPage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainMenu.this, StatsPage.class);
+                startActivity(intent);
             }
         });
     }

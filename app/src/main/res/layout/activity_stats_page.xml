@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".StatsPage">
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tv_stats_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Stats"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="24dp" />
+
+    <!-- Stats container -->
+    <LinearLayout
+        android:id="@+id/stats_container"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        app:layout_constraintTop_toBottomOf="@id/tv_stats_title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp">
+
+        <TextView
+            android:id="@+id/tv_games_played"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Games Played: —"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/tv_games_won"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Games Won: —"
+            android:layout_marginTop="8dp"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/tv_pct_won"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Win %: —"
+            android:layout_marginTop="8dp"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/tv_best_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Best Time: —"
+            android:layout_marginTop="8dp"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/tv_time_played"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Time Played: —"
+            android:layout_marginTop="8dp"
+            android:textSize="16sp" />
+
+    </LinearLayout>
+
+    <!-- Back button referenced by StatsPage.java -->
+    <Button
+        android:id="@+id/btn_back"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Back"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="24dp" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

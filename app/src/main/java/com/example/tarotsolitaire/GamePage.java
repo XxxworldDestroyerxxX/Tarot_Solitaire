@@ -21,6 +21,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.firestore.FieldValue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -248,16 +249,16 @@ public class GamePage extends BaseActivity {
         int spacerPx = (int)(6 * getResources().getDisplayMetrics().density);
         android.widget.LinearLayout.LayoutParams spLp = new android.widget.LinearLayout.LayoutParams(spacerPx, android.widget.LinearLayout.LayoutParams.MATCH_PARENT);
         ll.addView(spacer1, spLp);
-        ll.addView(undoBtn, llParams);
+        ll.addView(returnB, llParams);
         View spacer2 = new View(this);
         ll.addView(spacer2, spLp);
-        ll.addView(debugB, llParams);
+        ll.addView(restartBtn, llParams);
         View spacer3 = new View(this);
         ll.addView(spacer3, spLp);
-        ll.addView(restartBtn, llParams);
+        ll.addView(debugB, llParams);
         View spacer4 = new View(this);
         ll.addView(spacer4, spLp);
-        ll.addView(returnB, llParams);
+        ll.addView(undoBtn, llParams);
 
         // Place the horizontal layout at bottom-left of the controls overlay
         FrameLayout.LayoutParams llFrameLp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM | Gravity.START);
@@ -305,7 +306,6 @@ public class GamePage extends BaseActivity {
             runOnUiThread(() -> {
                 Intent intent = new Intent(GamePage.this, MainMenu.class);
                 startActivity(intent);
-                finish();
             });
         });
 
@@ -399,6 +399,21 @@ public class GamePage extends BaseActivity {
             for (Card c : cards) logic.removeCard(c);
         }
         Log.d(TAG, "clearAll: finished clearing piles and views");
+
+        // Update gamesPlayed counter in Firestore for the signed-in user
+        try {
+            if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+                String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                FirebaseFirestore db = FirebaseFirestore.getInstance();
+                Map<String, Object> m = new HashMap<>();
+                m.put("gamesPlayed", FieldValue.increment(1));
+                db.collection("users").document(uid).set(m, SetOptions.merge())
+                        .addOnSuccessListener(aVoid -> Log.i(TAG, "Incremented gamesPlayed for user " + uid))
+                        .addOnFailureListener(e -> Log.e(TAG, "Failed to increment gamesPlayed", e));
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error while updating gamesPlayed", e);
+        }
     }
 
     private CardView findCardView(Card c) {
@@ -663,6 +678,16 @@ public class GamePage extends BaseActivity {
                 if (FirebaseAuth.getInstance().getCurrentUser() != null) {
                     String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
                     FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+                    // Increment gamesWon and add this elapsed time to the totalPlayTimeMs counter
+                    Map<String, Object> statsUpdate = new HashMap<>();
+                    statsUpdate.put("gamesWon", FieldValue.increment(1));
+                    statsUpdate.put("totalPlayTimeMs", FieldValue.increment(elapsed));
+                    db.collection("users").document(uid).set(statsUpdate, SetOptions.merge())
+                            .addOnSuccessListener(aVoid -> Log.i(TAG, "Updated gamesWon and totalPlayTimeMs for " + uid))
+                            .addOnFailureListener(e -> Log.e(TAG, "Failed to update gamesWon/totalPlayTimeMs", e));
+
+                    // Preserve existing bestTime update logic
                     db.collection("users").document(uid).get().addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
                             DocumentSnapshot doc = task.getResult();

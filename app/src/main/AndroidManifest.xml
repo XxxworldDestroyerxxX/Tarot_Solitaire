@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
     <!-- Internet is required for Firebase Auth and Firestore network calls -->
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -15,6 +14,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TarotSolitaire">
+        <activity
+            android:name=".StatsPage"
+            android:exported="false" />
         <activity
             android:name=".optionsPage"
             android:exported="false" />
@@ -35,17 +37,11 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
         <activity
             android:name=".GamePage"
             android:exported="true"
-            android:screenOrientation="landscape"
-            >
-
-
-        </activity>
-
+            android:screenOrientation="landscape"></activity>
     </application>
 
 </manifest>
