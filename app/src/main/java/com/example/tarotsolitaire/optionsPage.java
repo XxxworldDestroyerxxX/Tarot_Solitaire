@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -72,7 +71,6 @@ public class optionsPage extends BaseActivity {
         ImageButton btnPrev = findViewById(R.id.btn_prev);
 
         Button btnLoop = findViewById(R.id.btn_loop_mode);
-        SeekBar sb = findViewById(R.id.sb_music_volume);
         Spinner spinner = findViewById(R.id.spinner_song_list);
 
         // If there are no playable songs, show a clear message and disable controls
@@ -84,7 +82,6 @@ public class optionsPage extends BaseActivity {
             btnNext.setEnabled(false);
             btnPrev.setEnabled(false);
             btnLoop.setEnabled(false);
-            sb.setEnabled(false);
             spinner.setEnabled(false);
             // keep mute switch available
             return;
@@ -108,13 +105,6 @@ public class optionsPage extends BaseActivity {
             else next = MusicManager.LoopMode.OFF;
             musicManager.setLoopMode(next);
             btnLoop.setText("Loop: " + (next == MusicManager.LoopMode.OFF ? "Off" : next == MusicManager.LoopMode.ONE ? "One" : "All"));
-        });
-
-        sb.setProgress((int)(musicManager.getVolume() * 100f));
-        sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) { musicManager.setVolume(progress / 100f); }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
 
         if (titles != null && titles.length > 0) {
@@ -142,4 +132,3 @@ public class optionsPage extends BaseActivity {
         }));
     }
 }
-

@@ -233,7 +233,7 @@ public class CardView extends View {
                     suitColor = Color.parseColor("#388E3C"); // green
                     break;
                 case SPADES:
-                    suitColor = Color.parseColor("#FBC02D"); // yellow
+                    suitColor = Color.parseColor("#D6C811"); // stronger amber/orange-yellow
                     break;
             }
 

@@ -83,26 +83,16 @@
         android:id="@+id/tv_volume_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Volume"
+        android:text="Volume (use system controls)"
         app:layout_constraintTop_toBottomOf="@id/btn_loop_mode"
         app:layout_constraintStart_toStartOf="parent"
         android:layout_marginTop="12dp" />
-
-    <SeekBar
-        android:id="@+id/sb_music_volume"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/tv_volume_label"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="8dp"
-        android:max="100" />
 
     <Spinner
         android:id="@+id/spinner_song_list"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/sb_music_volume"
+        app:layout_constraintTop_toBottomOf="@id/tv_volume_label"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="12dp" />
