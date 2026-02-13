@@ -65,6 +65,10 @@ public class GamePage extends BaseActivity {
     private Deck currentDeck;
     // Flag to suppress recording moves while the initial deal is happening (snapping causes onPlaced events)
     private boolean isDealing = false;
+    private int initTable = 1;
+
+    // Flag to ensure GameInit runs only once per Activity instance
+    private boolean hasInitialized = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,7 +79,49 @@ public class GamePage extends BaseActivity {
 
         timerHandler = new Handler(Looper.getMainLooper());
 
-        // --- 1. FIND ALL VIEWS FROM THE XML ---
+        // Initialize once per Activity instance. If the Activity is recreated (new instance), GameInit will run again.
+        if (!hasInitialized) {
+            GameInit();
+            hasInitialized = true;
+        }
+    }
+
+    // New helper that performs the full initial game table construction in the same order
+    // it previously ran inline in onCreate. This keeps onCreate concise while preserving
+    // behavior and ordering (finding views, wiring logic, creating overlays, controls,
+    // wiring buttons, building master lists, and scheduling the initial shuffle/deal).
+    private void GameInit() {
+        // 1) Find pile views from XML
+        findPileViews();
+
+        // 2) Create and link the pile logic
+        wirePileLogic();
+
+        // 3) Apply labels and configure the organize store
+        labelRightPilesAndOrganizeStore();
+
+        // 4) Create win overlay and text
+        createWinOverlay();
+
+        // 5) Create controls overlay and UI elements. Returns the debug toggle button so we can wire it after debug overlay exists.
+        android.widget.Button debugButton = createControls();
+
+        // 6) Create debug overlay (hidden)
+        createDebugOverlay();
+
+        // 7) Wire debug toggle to the debug overlay
+        wireDebugToggle(debugButton);
+
+        // 8) Add controls overlay to root (on top of game view)
+        if (controlsOverlay != null) root.addView(controlsOverlay);
+
+        // 9) Build master list and schedule initial shuffle/deal
+        buildAllPilesAndStart();
+    }
+
+    // --- Helper method implementations ---
+
+    private void findPileViews() {
         leftPileViews.clear();
         leftPileViews.add(findViewById(R.id.playPile1));
         leftPileViews.add(findViewById(R.id.playPile2));
@@ -97,8 +143,9 @@ public class GamePage extends BaseActivity {
         rightPileViews.add(findViewById(R.id.organizePile5));
         rightPileViews.add(findViewById(R.id.organizePile6));
         organizeStoreView = findViewById(R.id.organizeStore);
+    }
 
-        // --- 2. CREATE AND LINK THE LOGIC ---
+    private void wirePileLogic() {
         for (PileView pileView : leftPileViews) {
             Pile pileLogic = new Pile();
             pileView.setLogicalPile(pileLogic);
@@ -156,7 +203,9 @@ public class GamePage extends BaseActivity {
                 pileView.setLogicalPile(new SpecialPile());
             }
         }
+    }
 
+    private void labelRightPilesAndOrganizeStore() {
         if (rightPileViews.size() >= 6) {
             rightPileViews.get(0).setLabel(getString(R.string.label_hearts));
             rightPileViews.get(1).setLabel(getString(R.string.label_diamonds));
@@ -172,8 +221,9 @@ public class GamePage extends BaseActivity {
             SpecialPile.PlacementRule storeRule = (pile, card) -> card != null && pile.isEmpty();
             organizeStoreView.setLogicalPile(new SpecialPile(storeRule));
         }
+    }
 
-        // Initialize win overlay
+    private void createWinOverlay() {
         View winOverlay = new View(this);
         winOverlay.setBackgroundColor(0xAA000000);
         ConstraintLayout.LayoutParams winOverlayLp = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.MATCH_PARENT);
@@ -196,7 +246,11 @@ public class GamePage extends BaseActivity {
         winText.setLayoutParams(wtLp);
         root.addView(winText);
         winTextView = winText;
+    }
 
+    // Create controls overlay and UI elements (timer, undo, debug toggle, restart, return).
+    // Returns the debug toggle button so it can be wired after debug overlay creation.
+    private android.widget.Button createControls() {
         // Controls overlay
         FrameLayout controls = new FrameLayout(this);
         ConstraintLayout.LayoutParams coLp = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.MATCH_PARENT);
@@ -224,7 +278,6 @@ public class GamePage extends BaseActivity {
         undoB.setVisibility(View.VISIBLE);
         undoBtn = undoB;
 
-
         // Debug toggle button
         android.widget.Button debugB = new android.widget.Button(this);
         debugB.setText(getString(R.string.debug_toggle));
@@ -240,7 +293,6 @@ public class GamePage extends BaseActivity {
         android.widget.Button returnB = new android.widget.Button(this);
         returnB.setText(getString(R.string.Return));
         returnB.setVisibility(View.VISIBLE);
-
 
         // Add views into linear layout: timer, small spacer, undo, small spacer, debug
         ll.addView(timerView, llParams);
@@ -264,27 +316,6 @@ public class GamePage extends BaseActivity {
         FrameLayout.LayoutParams llFrameLp = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM | Gravity.START);
         llFrameLp.setMargins(baseMargin, 0, 0, baseMargin);
         controls.addView(ll, llFrameLp);
-
-        // Create debug overlay (initially hidden) and add to root (on top of game view)
-        debugOverlay = new DebugOverlay(this);
-        ConstraintLayout.LayoutParams debugLpFull = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.MATCH_PARENT);
-        debugOverlay.setLayoutParams(debugLpFull);
-        debugOverlay.setVisibility(View.GONE);
-        root.addView(debugOverlay);
-
-        // Wire debug toggle to show/hide overlay and bring it to front when visible
-        debugB.setOnClickListener(v -> {
-            if (debugOverlay.getVisibility() == View.VISIBLE) {
-                debugOverlay.setVisibility(View.GONE);
-                debugOverlay.clear();
-            } else {
-                debugOverlay.setVisibility(View.VISIBLE);
-                // ensure overlay is above controls overlay
-                debugOverlay.bringToFront();
-            }
-        });
-
-        root.addView(controls);
 
         // Wire restart button to use the three-step restartGame flow
         restartBtn.setOnClickListener(v -> {
@@ -346,6 +377,32 @@ public class GamePage extends BaseActivity {
             android.widget.Toast.makeText(this, getString(R.string.undo_done), android.widget.Toast.LENGTH_SHORT).show();
         }));
 
+        return debugB;
+    }
+
+    private void createDebugOverlay() {
+        debugOverlay = new DebugOverlay(this);
+        ConstraintLayout.LayoutParams debugLpFull = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.MATCH_PARENT);
+        debugOverlay.setLayoutParams(debugLpFull);
+        debugOverlay.setVisibility(View.GONE);
+        root.addView(debugOverlay);
+    }
+
+    private void wireDebugToggle(android.widget.Button debugB) {
+        if (debugB == null) return;
+        debugB.setOnClickListener(v -> {
+            if (debugOverlay.getVisibility() == View.VISIBLE) {
+                debugOverlay.setVisibility(View.GONE);
+                debugOverlay.clear();
+            } else {
+                debugOverlay.setVisibility(View.VISIBLE);
+                // ensure overlay is above controls overlay
+                debugOverlay.bringToFront();
+            }
+        });
+    }
+
+    private void buildAllPilesAndStart() {
         // Build master list
         allPiles.clear();
         allPiles.addAll(leftPileViews);

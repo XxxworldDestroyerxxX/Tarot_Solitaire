@@ -15,6 +15,18 @@
         android:supportsRtl="false"
         android:theme="@style/Theme.TarotSolitaire">
         <activity
+            android:name=".StartActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".Tutorial"
+            android:exported="false" />
+        <activity
             android:name=".StatsPage"
             android:exported="false" />
         <activity
@@ -31,17 +43,11 @@
             android:exported="false" />
         <activity
             android:name=".loginPage"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:exported="true" />
         <activity
             android:name=".GamePage"
             android:exported="true"
-            android:screenOrientation="landscape"></activity>
+            android:screenOrientation="landscape" />
     </application>
 
 </manifest>

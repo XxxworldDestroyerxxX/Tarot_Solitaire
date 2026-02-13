@@ -63,6 +63,8 @@ public class MainMenu extends BaseActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainMenu.this, GamePage.class);
+                // If a GamePage already exists in the task's back stack, bring it to front
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 startActivity(intent);
             }
         });
@@ -72,6 +74,15 @@ public class MainMenu extends BaseActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainMenu.this, optionsPage.class);
+                startActivity(intent);
+            }
+        });
+
+        Button Tutorial = findViewById(R.id.btn_Tutorial);
+        Tutorial.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainMenu.this, Tutorial.class);
                 startActivity(intent);
             }
         });

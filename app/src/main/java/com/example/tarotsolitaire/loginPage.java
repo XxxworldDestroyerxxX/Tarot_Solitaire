@@ -96,14 +96,15 @@ public class loginPage extends BaseActivity {
         });
 
         // If user already signed in, automatically fetch their profile and navigate to MainMenu
-        if (auth != null && auth.getCurrentUser() != null) {
-            Log.i("LoginActivity", "User already signed in (uid=" + auth.getCurrentUser().getUid() + ") - auto-launching MainMenu");
-            // Attempt to load user profile (this will call startMainMenu when done)
-            getUserDataFromFirestore();
-            return; // stop further UI setup on the login screen
-        } else {
-            Log.i("LoginActivity", "No user currently signed in");
-        }
+        //        if (auth != null && auth.getCurrentUser() != null) {
+        //            Log.i("LoginActivity", "User already signed in (uid=" + auth.getCurrentUser().getUid() + ") - auto-launching MainMenu");
+        //            // Attempt to load user profile (this will call startMainMenu when done)
+        //            getUserDataFromFirestore();
+        //            return; // stop further UI setup on the login screen
+        //        } else {
+        //            Log.i("LoginActivity", "No user currently signed in");
+        //        }
+        Log.i("LoginActivity", "loginPage started; waiting for user input (no auto-redirect)");
 
 
     }
