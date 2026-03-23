@@ -1,4 +1,4 @@
-package com.example.tarotsolitaire;
+package com.example.tarotsolitaire.view;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -8,6 +8,10 @@ import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
+
+import com.example.tarotsolitaire.model.Pile;
+import com.example.tarotsolitaire.R;
+
 import java.util.ArrayList;
 import java.util.List;
 

@@ -1,13 +1,11 @@
-package com.example.tarotsolitaire;
+package com.example.tarotsolitaire.view;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
@@ -17,6 +15,9 @@ import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 import androidx.annotation.NonNull;
+
+import com.example.tarotsolitaire.model.Card;
+
 import java.util.List;
 
 @SuppressLint("ViewConstructor")

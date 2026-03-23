@@ -1,4 +1,4 @@
-package com.example.tarotsolitaire;
+package com.example.tarotsolitaire.model;
 
 public class SpecialPile extends Pile {
 

@@ -1,4 +1,4 @@
-package com.example.tarotsolitaire;
+package com.example.tarotsolitaire.view;
 
 import android.content.Context;
 import android.graphics.Canvas;

@@ -1,8 +1,8 @@
-package com.example.tarotsolitaire;
+package com.example.tarotsolitaire.Activities;
 
 import android.content.Intent;
 import android.os.Bundle;
-import androidx.appcompat.app.AppCompatActivity;
+
 import androidx.constraintlayout.widget.ConstraintLayout;
 import android.util.TypedValue;
 import android.view.View;
@@ -17,6 +17,15 @@ import android.os.Looper;
 import android.view.Gravity;
 import androidx.annotation.NonNull;
 
+import com.example.tarotsolitaire.BaseActivity;
+import com.example.tarotsolitaire.model.Card;
+import com.example.tarotsolitaire.view.CardView;
+import com.example.tarotsolitaire.view.DebugOverlay;
+import com.example.tarotsolitaire.model.Deck;
+import com.example.tarotsolitaire.model.Pile;
+import com.example.tarotsolitaire.view.PileView;
+import com.example.tarotsolitaire.R;
+import com.example.tarotsolitaire.model.SpecialPile;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -26,7 +35,7 @@ import com.google.firebase.firestore.FieldValue;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GamePage extends BaseActivity {
+public class GameActivity extends BaseActivity {
 
     private static final String TAG = "GamePage";
 
@@ -335,7 +344,7 @@ public class GamePage extends BaseActivity {
         returnB.setOnClickListener(v -> {
             Log.d(TAG, "Return button clicked (Go to main menu activity)");
             runOnUiThread(() -> {
-                Intent intent = new Intent(GamePage.this, MainMenu.class);
+                Intent intent = new Intent(GameActivity.this, MainMenu.class);
                 startActivity(intent);
             });
         });

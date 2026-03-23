@@ -38,15 +38,27 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
 
-    // Firebase BOM manages versions for Firebase libraries
-    implementation(platform("com.google.firebase:firebase-bom:32.2.0"))
 
-    // Use non-KTX (Java) Firebase SDKs to avoid introducing Kotlin runtime
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
     implementation(libs.credentials)
     implementation(libs.credentials.play.services.auth)
     implementation(libs.googleid)
+
+    // BOM
+    implementation(platform(libs.firebase.bom))
+
+
+// Firebase (ללא גרסאות)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.ai)
+
+
+// One-shot (Guava ListenableFuture)
+    implementation(libs.guava)
+
+
+// Streaming (Reactive Streams Publisher)
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

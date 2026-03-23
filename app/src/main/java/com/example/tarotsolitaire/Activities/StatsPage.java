@@ -1,8 +1,10 @@
-package com.example.tarotsolitaire;
+package com.example.tarotsolitaire.Activities;
+
+import static android.content.ContentValues.TAG;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -12,6 +14,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.tarotsolitaire.R;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -60,6 +63,7 @@ public class StatsPage extends AppCompatActivity {
         }
 
         String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        Log.d(TAG, "loadStats: uid = "+ uid);
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("users").document(uid).get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {

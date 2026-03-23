@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:name=".Firebase"
+        android:name=".utils.Firebase"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -15,7 +15,7 @@
         android:supportsRtl="false"
         android:theme="@style/Theme.TarotSolitaire">
         <activity
-            android:name=".StartActivity"
+            android:name=".Activities.StartActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -24,28 +24,28 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".Tutorial"
+            android:name=".Activities.Tutorial"
             android:exported="false" />
         <activity
-            android:name=".StatsPage"
+            android:name=".Activities.StatsPage"
             android:exported="false" />
         <activity
-            android:name=".optionsPage"
+            android:name=".Activities.optionsPage"
             android:exported="false" />
         <activity
-            android:name=".Leaderboard"
+            android:name=".Activities.Leaderboard"
             android:exported="false" />
         <activity
-            android:name=".RegistrationPage"
+            android:name=".Activities.RegistrationPage"
             android:exported="false" />
         <activity
-            android:name=".MainMenu"
+            android:name=".Activities.MainMenu"
             android:exported="false" />
         <activity
-            android:name=".loginPage"
+            android:name=".Activities.loginPage"
             android:exported="true" />
         <activity
-            android:name=".GamePage"
+            android:name=".Activities.GameActivity"
             android:exported="true"
             android:screenOrientation="landscape" />
     </application>

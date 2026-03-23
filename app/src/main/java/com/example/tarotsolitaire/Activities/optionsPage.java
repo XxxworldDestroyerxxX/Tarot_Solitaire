@@ -1,6 +1,5 @@
-package com.example.tarotsolitaire;
+package com.example.tarotsolitaire.Activities;
 
-import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.View;
@@ -14,6 +13,10 @@ import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import com.example.tarotsolitaire.BaseActivity;
+import com.example.tarotsolitaire.manager.MusicManager;
+import com.example.tarotsolitaire.R;
 
 public class optionsPage extends BaseActivity {
 

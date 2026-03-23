@@ -1,6 +1,5 @@
-package com.example.tarotsolitaire;
+package com.example.tarotsolitaire.Activities;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -14,6 +13,9 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.tarotsolitaire.BaseActivity;
+import com.example.tarotsolitaire.manager.MusicManager;
+import com.example.tarotsolitaire.R;
 import com.google.firebase.auth.FirebaseAuth;
 
 public class MainMenu extends BaseActivity {
@@ -62,7 +64,7 @@ public class MainMenu extends BaseActivity {
         toGame.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainMenu.this, GamePage.class);
+                Intent intent = new Intent(MainMenu.this, GameActivity.class);
                 // If a GamePage already exists in the task's back stack, bring it to front
                 intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 startActivity(intent);

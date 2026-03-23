@@ -1,4 +1,4 @@
-package com.example.tarotsolitaire;
+package com.example.tarotsolitaire.manager;
 
 import android.content.Context;
 import android.content.SharedPreferences;

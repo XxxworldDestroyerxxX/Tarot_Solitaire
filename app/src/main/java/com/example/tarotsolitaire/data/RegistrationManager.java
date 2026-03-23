@@ -1,4 +1,4 @@
-package com.example.tarotsolitaire;
+package com.example.tarotsolitaire.data;
 import android.app.Activity;
 import android.text.TextUtils;
 import android.util.Log;

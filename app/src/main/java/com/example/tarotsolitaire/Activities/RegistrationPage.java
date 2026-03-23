@@ -1,6 +1,4 @@
-package com.example.tarotsolitaire;
-
-import static android.content.ContentValues.TAG;
+package com.example.tarotsolitaire.Activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -12,16 +10,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import com.example.tarotsolitaire.RegistrationManager;
-
-
-
-import java.text.BreakIterator;
+import com.example.tarotsolitaire.BaseActivity;
+import com.example.tarotsolitaire.R;
+import com.example.tarotsolitaire.data.RegistrationManager;
 
 public class RegistrationPage extends BaseActivity {
 
