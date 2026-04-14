@@ -1,5 +1,8 @@
 package com.example.tarotsolitaire.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @SuppressWarnings("unused")
 public class Card {
 
@@ -25,6 +28,40 @@ public class Card {
         this.suit = null;
         this.rank = tarotNumber;
         this.currentPile = null;
+    }
+
+    // --- Tarot name mapping helpers (use resources so names can be localized) ---
+    public static String getTarotName(android.content.Context context, int tarotNumber) {
+        if (context == null) return "Unknown(" + tarotNumber + ")";
+        try {
+            String[] arr = context.getResources().getStringArray(com.example.tarotsolitaire.R.array.tarot_names);
+            if (tarotNumber >= 0 && tarotNumber < arr.length) return arr[tarotNumber];
+            return "Unknown(" + tarotNumber + ")";
+        } catch (Exception e) {
+            return "Unknown(" + tarotNumber + ")";
+        }
+    }
+
+    public static List<String> getNamesForRanks(android.content.Context context, List<Integer> ranks) {
+        List<String> out = new ArrayList<>();
+        if (ranks == null) return out;
+        for (Integer r : ranks) {
+            if (r == null) continue;
+            out.add(getTarotName(context, r));
+        }
+        return out;
+    }
+
+    // Backward-compatible helpers that don't require Context: fall back to numeric name
+    public static String getTarotName(int tarotNumber) {
+        return String.valueOf(tarotNumber);
+    }
+
+    public static List<String> getNamesForRanks(List<Integer> ranks) {
+        List<String> out = new ArrayList<>();
+        if (ranks == null) return out;
+        for (Integer r : ranks) if (r != null) out.add(getTarotName(r));
+        return out;
     }
 
     // --- PLACEMENT RULES ---

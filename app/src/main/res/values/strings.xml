@@ -18,4 +18,30 @@
     <string name="undo_done">Undo performed</string>
     <string name="debug_toggle">Debug</string>
     <string name="Return">Return</string>
+
+    <!-- Tarot card canonical names (0..21) for localization -->
+    <string-array name="tarot_names">
+        <item>The Fool</item>
+        <item>The Magician</item>
+        <item>The High Priestess</item>
+        <item>The Empress</item>
+        <item>The Emperor</item>
+        <item>The Hierophant</item>
+        <item>The Lovers</item>
+        <item>The Chariot</item>
+        <item>Strength</item>
+        <item>The Hermit</item>
+        <item>Wheel of Fortune</item>
+        <item>Justice</item>
+        <item>The Hanged Man</item>
+        <item>Death</item>
+        <item>Temperance</item>
+        <item>The Devil</item>
+        <item>The Tower</item>
+        <item>The Star</item>
+        <item>The Moon</item>
+        <item>The Sun</item>
+        <item>Judgement</item>
+        <item>The World</item>
+    </string-array>
 </resources>

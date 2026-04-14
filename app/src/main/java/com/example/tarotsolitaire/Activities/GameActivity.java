@@ -31,6 +31,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.FieldValue;
+import com.example.tarotsolitaire.utils.GeminiManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +39,11 @@ import java.util.Map;
 public class GameActivity extends BaseActivity {
 
     private static final String TAG = "GamePage";
+    // Feature flag: enable/disable AI-generated victory message
+    private static final boolean ENABLE_GEMINI_ON_WIN = true;
+    // TEMP DEV FLAG: toggle this to enable/disable the temporary Auto Win button.
+    // Keep this clearly marked so it can be removed before release.
+    private static final boolean TEMP_ENABLE_AUTO_WIN_BUTTON = true;
 
     // Timer fields moved to instance scope so lifecycle methods can control them
     private long startTimeMs = 0L; // wall-clock when timer started/resumed
@@ -62,6 +68,9 @@ public class GameActivity extends BaseActivity {
     private final List<PileView> leftPileViews = new ArrayList<>();
     private final List<PileView> rightPileViews = new ArrayList<>();
     private final List<PileView> allPiles = new ArrayList<>();
+    // Keep a short history of recently placed tarot card ranks so we can reliably
+    // build AI prompts even across multiple games in the same app session.
+    private final List<Integer> recentTarotPlacements = new ArrayList<>();
     private PileView organizeStoreView;
     private DebugOverlay debugOverlay;
     private FrameLayout controlsOverlay;
@@ -292,6 +301,16 @@ public class GameActivity extends BaseActivity {
         debugB.setText(getString(R.string.debug_toggle));
         debugB.setVisibility(View.VISIBLE);
 
+        // TEMP DEV: Auto Win button (easy to remove via TEMP_ENABLE_AUTO_WIN_BUTTON flag)
+        android.widget.Button autoWinB = null;
+        if (TEMP_ENABLE_AUTO_WIN_BUTTON) {
+            autoWinB = new android.widget.Button(this);
+            autoWinB.setText("Auto Win (TEMP)");
+            autoWinB.setVisibility(View.VISIBLE);
+            // Small, clear tag to identify later for removal
+            autoWinB.setTag("TEMP_AUTO_WIN_BUTTON");
+        }
+
         // Restart button
         android.widget.Button restartB = new android.widget.Button(this);
         restartB.setText(getString(R.string.restart));
@@ -317,6 +336,19 @@ public class GameActivity extends BaseActivity {
         View spacer3 = new View(this);
         ll.addView(spacer3, spLp);
         ll.addView(debugB, llParams);
+        // If the temporary auto-win button exists, add it to the controls so it's visible to devs
+        if (autoWinB != null) {
+            View spacerTemp = new View(this);
+            ll.addView(spacerTemp, spLp);
+            ll.addView(autoWinB, llParams);
+            // Wire the auto-win button to the helper below
+            android.widget.Button finalAutoWinB = autoWinB;
+            autoWinB.setOnClickListener(v -> {
+                Log.d(TAG, "Auto Win button clicked (TEMP)");
+                // Run the forced win on the UI thread
+                runOnUiThread(this::forceWin);
+            });
+        }
         View spacer4 = new View(this);
         ll.addView(spacer4, spLp);
         ll.addView(undoBtn, llParams);
@@ -443,6 +475,8 @@ public class GameActivity extends BaseActivity {
     private void clearAll() {
         Log.d(TAG, "clearAll: starting to remove card views and clear piles");
         if (root == null) return;
+        // clear recent tarot placement history when board is cleared/restarted
+        recentTarotPlacements.clear();
         // Clear the saved undo state when clearing the board so undo doesn't replay a previous move
         lastMove = null;
         Log.d(TAG, "clearAll: lastMove cleared");
@@ -549,6 +583,16 @@ public class GameActivity extends BaseActivity {
                 // Record last move: note that 'fromPile' may be null if card came from nowhere
                 lastMove = new LastMove(placedCard, fromPile, toPile);
                 Log.d(TAG, "Recorded last move: " + lastMove);
+                // Track tarot placements for later AI-crafted messages (keep list small)
+                try {
+                    if (placedCard != null && placedCard.getType() == Card.Type.TAROT) {
+                        recentTarotPlacements.add(placedCard.getRank());
+                        // keep last 10
+                        if (recentTarotPlacements.size() > 10) recentTarotPlacements.remove(0);
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "onPlaced: failed recording tarot placement", e);
+                }
                 // run checkWin on UI thread
                 runOnUiThread(this::checkWin);
                 // After a successful placement by the user, adjust stacking so piles don't overflow
@@ -736,8 +780,93 @@ public class GameActivity extends BaseActivity {
             if (winTextView != null) winTextView.setText(getString(R.string.you_win_time, timeStr));
             if (winOverlayView != null) winOverlayView.setVisibility(View.VISIBLE);
             if (winTextView != null) winTextView.setVisibility(View.VISIBLE);
-            try { if (timerHandler != null) timerHandler.removeCallbacksAndMessages(null); } catch (Exception ignored) {}
-            Log.d(TAG, "checkWin: player won in " + timeStr + " (ms=" + elapsed + ")");
+            // Ensure the win overlay and text are above piles/cards but remain behind the controls/buttons.
+            try {
+                if (winOverlayView != null) {
+                    winOverlayView.setVisibility(View.VISIBLE);
+                    // make overlay intercept touches so underlying game elements don't respond
+                    winOverlayView.setClickable(true);
+                    // Bring overlay above cards but use a modest elevation so controls can sit above it
+                    winOverlayView.bringToFront();
+                    try { winOverlayView.setElevation(10f); winOverlayView.setTranslationZ(10f); } catch (Throwable ignored) {}
+                }
+                if (winTextView != null) {
+                    winTextView.setVisibility(View.VISIBLE);
+                    winTextView.bringToFront();
+                    try { winTextView.setElevation(11f); winTextView.setTranslationZ(11f); } catch (Throwable ignored) {}
+                }
+                // Ensure controls overlay (buttons) is above the win overlay
+                if (controlsOverlay != null) {
+                    try {
+                        controlsOverlay.bringToFront();
+                        controlsOverlay.setClickable(true);
+                        // Give controls a higher elevation so buttons remain on top
+                        try { controlsOverlay.setElevation(20f); controlsOverlay.setTranslationZ(20f); } catch (Throwable ignored) {}
+                    } catch (Throwable t) {
+                        Log.w(TAG, "checkWin: failed to bring controlsOverlay to front", t);
+                    }
+                }
+                // Force a redraw so z-order changes take effect immediately
+                if (root != null) root.invalidate();
+            } catch (Exception e) {
+                Log.w(TAG, "checkWin: unable to force overlay z-order", e);
+            }
+
+            // Build tarot-name list and call the AI to generate a victory message
+            try {
+                if (ENABLE_GEMINI_ON_WIN) {
+                    java.util.List<Integer> tarotRanks = new java.util.ArrayList<>();
+                    // rightPileViews index 4 is tarot ascending, index 5 is tarot descending (if present)
+                    if (rightPileViews.size() >= 6) {
+                        PileView asc = rightPileViews.get(4);
+                        PileView desc = rightPileViews.get(5);
+                        if (asc != null && asc.getLogicalPile() != null && !asc.getLogicalPile().isEmpty()) {
+                            Card top = asc.getLogicalPile().getTopCard();
+                            if (top != null && top.getType() == Card.Type.TAROT) tarotRanks.add(top.getRank());
+                        }
+                        if (desc != null && desc.getLogicalPile() != null && !desc.getLogicalPile().isEmpty()) {
+                            Card top = desc.getLogicalPile().getTopCard();
+                            if (top != null && top.getType() == Card.Type.TAROT) tarotRanks.add(top.getRank());
+                        }
+                    }
+                    // If no tarot ranks were found above, prefer the most recently placed tarot cards
+                    // (this is more reliable across multiple games in the same app session).
+                    if (tarotRanks.isEmpty() && !recentTarotPlacements.isEmpty()) {
+                        // take up to last two unique recent tarot placements (preserve order newest->oldest)
+                        java.util.List<Integer> rev = new java.util.ArrayList<>(recentTarotPlacements);
+                        for (int i = rev.size() - 1; i >= 0 && tarotRanks.size() < 2; i--) {
+                            Integer r = rev.get(i);
+                            if (r == null) continue;
+                            if (!tarotRanks.contains(r)) tarotRanks.add(r);
+                        }
+                    }
+                    // Fallback: if still empty, try lastMove
+                    if (tarotRanks.isEmpty() && lastMove != null && lastMove.card != null && lastMove.card.getType() == Card.Type.TAROT) {
+                        tarotRanks.add(lastMove.card.getRank());
+                    }
+
+                    java.util.List<String> tarotNames = com.example.tarotsolitaire.model.Card.getNamesForRanks(this, tarotRanks);
+                    if (!tarotNames.isEmpty()) {
+                        String prompt = GeminiManager.buildWinPrompt(tarotNames, timeStr);
+                        GeminiManager.getInstance().sendText(prompt, this, new GeminiManager.GeminiCallback() {
+                            @Override public void onSuccess(String result) {
+                                try {
+                                    runOnUiThread(() -> {
+                                        if (winTextView != null) winTextView.setText(result);
+                                    });
+                                } catch (Exception e) {
+                                    Log.e(TAG, "Error applying Gemini result", e);
+                                }
+                            }
+                            @Override public void onError(Throwable error) {
+                                Log.e(TAG, "Gemini onError", error);
+                            }
+                        });
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error while invoking Gemini on win", e);
+            }
 
             // If user is signed in, update their bestTime in Firestore if this is a new record
             try {
@@ -812,5 +941,51 @@ public class GameActivity extends BaseActivity {
         long mins = totalSec / 60;
         long secs = totalSec % 60;
         return String.format(Locale.US, "%d:%02d", mins, secs);
+    }
+
+    /**
+     * Developer helper: force a win by emptying all left play piles (logical and views)
+     * and triggering the normal checkWin() flow. This is intentionally isolated and
+     * guarded by the TEMP_ENABLE_AUTO_WIN_BUTTON flag so it can be removed easily.
+     */
+    private void forceWin() {
+        Log.d(TAG, "forceWin: developer-initiated auto-win triggered");
+        if (root == null) return;
+        try {
+            // Remove card views and logical cards from each left pile
+            for (PileView pv : leftPileViews) {
+                if (pv == null) continue;
+                // Remove visual CardViews
+                java.util.List<CardView> cvs = new java.util.ArrayList<>(pv.getCardViews());
+                for (CardView cv : cvs) {
+                    try {
+                        pv.removeCardView(cv);
+                        if (cv.getParent() == root) root.removeView(cv);
+                    } catch (Exception e) {
+                        Log.w(TAG, "forceWin: failed removing CardView", e);
+                    }
+                }
+                // Remove logical cards
+                Pile logic = pv.getLogicalPile();
+                if (logic != null) {
+                    java.util.List<Card> cards = new java.util.ArrayList<>(logic.getCards());
+                    for (Card c : cards) {
+                        try { logic.removeCard(c); } catch (Exception e) { Log.w(TAG, "forceWin: failed removing Card from pile", e); }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "forceWin: error while clearing left piles", e);
+        }
+
+        // Ensure any UI changes are applied and then run the win check
+        runOnUiThread(() -> {
+            try {
+                checkWin();
+            } catch (Exception e) {
+                Log.e(TAG, "forceWin: error while running checkWin", e);
+            }
+        });
+        android.widget.Toast.makeText(this, "Auto-win triggered (dev)", android.widget.Toast.LENGTH_SHORT).show();
     }
 }

@@ -21,6 +21,7 @@ import com.google.firebase.ai.type.GenerativeBackend;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.concurrent.Executor;
+import java.util.List;
 
 
 public class GeminiManager {
@@ -38,6 +39,31 @@ public class GeminiManager {
             instance = new GeminiManager();
         }
         return instance;
+    }
+
+    /**
+     * Build a concise win prompt describing elapsed time and final tarot names.
+     * Located here so prompt text lives with the AI client.
+     */
+    public static String buildWinPrompt(List<String> tarotNames, String elapsedTime) {
+        String namesStr;
+        if (tarotNames == null || tarotNames.isEmpty()) {
+            namesStr = "(no tarot cards)";
+        } else {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < tarotNames.size(); i++) {
+                if (i > 0) sb.append(", ");
+                sb.append(tarotNames.get(i));
+            }
+            namesStr = sb.toString();
+        }
+        String timePart = (elapsedTime == null || elapsedTime.isEmpty()) ? "an unknown time" : elapsedTime;
+        return String.format(
+                "The player just won a game of Tarot Solitaire in %s. The final tarot cards placed were: %s. " +
+                        "Please produce a short (1-2 sentence), warm congratulatory message that mentions these cards by name and ties them to the win.",
+                timePart,
+                namesStr
+        );
     }
 
     public void sendText(String promptStr, Context context, GeminiCallback callback)
