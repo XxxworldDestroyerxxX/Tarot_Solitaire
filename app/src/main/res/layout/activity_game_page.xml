@@ -10,75 +10,110 @@
     android:layoutDirection="ltr"
     tools:context=".Activities.GameActivity">
 
-    <!-- RIGHT ORGANIZE AREA PILES (Positioned with vertical constraints) -->
+    <!-- RIGHT ORGANIZE AREA PILES (4x2 GRID FIXED) -->
+
+    <!-- ROW 1 -->
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/organizePile1"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
-        android:layout_marginEnd="8dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="2dp"
+        app:layout_constraintDimensionRatio="2:3"
+        app:layout_constraintStart_toEndOf="@id/playPile11"
         app:layout_constraintEnd_toStartOf="@id/organizePile2"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/organizePile3"
-        app:layout_constraintVertical_chainStyle="spread_inside" />
+        app:layout_constraintBottom_toTopOf="@id/organizeStore" />
 
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/organizePile2"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
-        android:layout_marginEnd="@dimen/margin_play_area_top"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="2dp"
+        app:layout_constraintDimensionRatio="2:3"
+        app:layout_constraintStart_toEndOf="@id/organizePile1"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/organizePile1"
-        app:layout_constraintBottom_toBottomOf="@id/organizePile1" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/organizeStore" />
 
-    <!-- Invisible storage slot centered between the four suit piles -->
+    <!-- ROW 2 (STORE + DUMMY SIDE BY SIDE) -->
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/organizeStore"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
-        android:visibility="visible"
-        app:layout_constraintStart_toEndOf="@id/organizePile1"
-        app:layout_constraintEnd_toStartOf="@id/organizePile2"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="2dp"
+        app:layout_constraintDimensionRatio="2:3"
+        app:layout_constraintStart_toEndOf="@id/playPile11"
+        app:layout_constraintEnd_toStartOf="@id/organizeDummy"
         app:layout_constraintTop_toBottomOf="@id/organizePile1"
         app:layout_constraintBottom_toTopOf="@id/organizePile3" />
 
     <com.example.tarotsolitaire.view.PileView
+        android:id="@+id/organizeDummy"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="2dp"
+        app:layout_constraintDimensionRatio="2:3"
+        app:layout_constraintStart_toEndOf="@id/organizeStore"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/organizePile2"
+        app:layout_constraintBottom_toTopOf="@id/organizePile4" />
+
+    <!-- ROW 3 -->
+    <com.example.tarotsolitaire.view.PileView
         android:id="@+id/organizePile3"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
-        app:layout_constraintStart_toStartOf="@id/organizePile1"
-        app:layout_constraintTop_toBottomOf="@id/organizePile1"
-        app:layout_constraintBottom_toTopOf="@id/organizePile5"/>
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="2dp"
+        app:layout_constraintDimensionRatio="2:3"
+        app:layout_constraintStart_toEndOf="@id/playPile11"
+        app:layout_constraintEnd_toStartOf="@id/organizePile4"
+        app:layout_constraintTop_toBottomOf="@id/organizeStore"
+        app:layout_constraintBottom_toTopOf="@id/organizePile5" />
 
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/organizePile4"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
-        app:layout_constraintStart_toStartOf="@id/organizePile2"
-        app:layout_constraintTop_toTopOf="@id/organizePile3" />
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="2dp"
+        app:layout_constraintDimensionRatio="2:3"
+        app:layout_constraintStart_toEndOf="@id/organizePile3"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/organizeDummy"
+        app:layout_constraintBottom_toTopOf="@id/organizePile6" />
 
+    <!-- ROW 4 -->
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/organizePile5"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
-        app:layout_constraintStart_toStartOf="@id/organizePile3"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="2dp"
+        app:layout_constraintDimensionRatio="2:3"
+        app:layout_constraintStart_toEndOf="@id/playPile11"
+        app:layout_constraintEnd_toStartOf="@id/organizePile6"
         app:layout_constraintTop_toBottomOf="@id/organizePile3"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+        app:layout_constraintBottom_toBottomOf="parent" />
 
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/organizePile6"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
-        app:layout_constraintStart_toStartOf="@id/organizePile4"
-        app:layout_constraintTop_toTopOf="@id/organizePile5"/>
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="2dp"
+        app:layout_constraintDimensionRatio="2:3"
+        app:layout_constraintStart_toEndOf="@id/organizePile5"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/organizePile4"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 
     <!-- LEFT PLAY AREA PILES (Positioned with a horizontal chain) -->
+
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/playPile1"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
-        android:layout_marginStart="@dimen/margin_play_area_top"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="2dp"
         android:layout_marginTop="@dimen/margin_play_area_top"
+        app:layout_constraintDimensionRatio="2:3"
         app:layout_constraintHorizontal_chainStyle="spread_inside"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -86,32 +121,44 @@
 
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/playPile2"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        app:layout_constraintDimensionRatio="2:3"
         app:layout_constraintStart_toEndOf="@id/playPile1"
         app:layout_constraintTop_toTopOf="@id/playPile1"
         app:layout_constraintEnd_toStartOf="@id/playPile3"/>
 
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/playPile3"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        app:layout_constraintDimensionRatio="2:3"
         app:layout_constraintStart_toEndOf="@id/playPile2"
         app:layout_constraintTop_toTopOf="@id/playPile1"
         app:layout_constraintEnd_toStartOf="@id/playPile4"/>
 
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/playPile4"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        app:layout_constraintDimensionRatio="2:3"
         app:layout_constraintStart_toEndOf="@id/playPile3"
         app:layout_constraintTop_toTopOf="@id/playPile1"
         app:layout_constraintEnd_toStartOf="@id/playPile5"/>
 
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/playPile5"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        app:layout_constraintDimensionRatio="2:3"
         app:layout_constraintStart_toEndOf="@id/playPile4"
         app:layout_constraintTop_toTopOf="@id/playPile1"
         app:layout_constraintEnd_toStartOf="@id/playPile6_empty"/>
@@ -119,51 +166,68 @@
     <!-- Middle pile (sixth) should be empty initially -->
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/playPile6_empty"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        app:layout_constraintDimensionRatio="2:3"
         app:layout_constraintStart_toEndOf="@id/playPile5"
         app:layout_constraintTop_toTopOf="@id/playPile1"
         app:layout_constraintEnd_toStartOf="@id/playPile7"/>
 
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/playPile7"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        app:layout_constraintDimensionRatio="2:3"
         app:layout_constraintStart_toEndOf="@id/playPile6_empty"
         app:layout_constraintTop_toTopOf="@id/playPile1"
         app:layout_constraintEnd_toStartOf="@id/playPile8"/>
 
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/playPile8"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        app:layout_constraintDimensionRatio="2:3"
         app:layout_constraintStart_toEndOf="@id/playPile7"
         app:layout_constraintTop_toTopOf="@id/playPile1"
         app:layout_constraintEnd_toStartOf="@id/playPile9"/>
 
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/playPile9"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        app:layout_constraintDimensionRatio="2:3"
         app:layout_constraintStart_toEndOf="@id/playPile8"
         app:layout_constraintTop_toTopOf="@id/playPile1"
         app:layout_constraintEnd_toStartOf="@id/playPile10"/>
 
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/playPile10"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        app:layout_constraintDimensionRatio="2:3"
         app:layout_constraintStart_toEndOf="@id/playPile9"
         app:layout_constraintTop_toTopOf="@id/playPile1"
         app:layout_constraintEnd_toStartOf="@id/playPile11"/>
 
     <com.example.tarotsolitaire.view.PileView
         android:id="@+id/playPile11"
-        android:layout_width="@dimen/pile_width"
-        android:layout_height="@dimen/pile_height"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="2dp"
+        android:layout_marginEnd="2dp"
+        app:layout_constraintDimensionRatio="2:3"
         app:layout_constraintStart_toEndOf="@id/playPile10"
         app:layout_constraintTop_toTopOf="@id/playPile1"
-        app:layout_constraintEnd_toStartOf="@id/organizePile1"
-        android:layout_marginEnd="@dimen/margin_play_area_top"/>
+        app:layout_constraintEnd_toStartOf="@id/organizePile1" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

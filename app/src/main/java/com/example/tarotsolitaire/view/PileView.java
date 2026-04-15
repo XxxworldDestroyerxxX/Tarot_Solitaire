@@ -20,15 +20,11 @@ public class PileView extends FrameLayout {
     private final Paint paint;
     private final RectF rect;
     private final List<CardView> cardViews = new ArrayList<>(); // List of UI views
-
     private Pile logicalPile; // The crucial link to the game logic
-
     // Label for organize piles (e.g., "♥ 2→" or "T 0→")
     private String labelText = null;
     private final Paint labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-
     private boolean showLock = false; // whether to draw a small lock icon
-
     // Highlight state for drag-over feedback
     private boolean highlighted = false;
     private final Paint highlightPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
