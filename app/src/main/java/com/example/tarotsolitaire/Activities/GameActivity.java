@@ -832,7 +832,7 @@ public class GameActivity extends BaseActivity {
                     // If no tarot ranks were found above, prefer the most recently placed tarot cards
                     // (this is more reliable across multiple games in the same app session).
                     if (tarotRanks.isEmpty() && !recentTarotPlacements.isEmpty()) {
-                        // take up to last two unique recent tarot placements (preserve order newest->oldest)
+                        // take up to last two unique recent tarot placements, (preserve order newest->oldest)
                         java.util.List<Integer> rev = new java.util.ArrayList<>(recentTarotPlacements);
                         for (int i = rev.size() - 1; i >= 0 && tarotRanks.size() < 2; i--) {
                             Integer r = rev.get(i);
